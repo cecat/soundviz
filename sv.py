@@ -70,6 +70,10 @@ def main():
     df[['group_name', 'class_name']] = df['class'].str.split('.', n=1, expand=True)
     classification_counts = df['group_name'].value_counts()
 
+    total_classification_items = classification_counts.sum()
+    print(f"Total detections (class/class-score rows) used for Classification Distribution: {total_classification_items:,}")
+
+
     # Define custom groups and colors
     custom_groups = ['environment', 'birds', 'animals', 'people', 'vehicles', 'insects', 'weather']
     custom_colors = ['lightblue', 'red', 'orange', 'green', 'yellow', 'navy', 'brown']
@@ -281,7 +285,7 @@ def main():
     )
 
     ### Generate the PDF Report ###
-    make_pdf(output_pdf_path, df)
+    make_pdf(output_pdf_path, df, total_classification_items)
 
 if __name__ == "__main__":
     main()
