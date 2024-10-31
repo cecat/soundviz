@@ -223,16 +223,30 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
         c.showPage()
 
 # Create PDF
-def make_pdf(output_pdf_path, df):
+def make_pdf(output_pdf_path, df, total_classification_items):
     print(f"Creating PDF report at {output_pdf_path}.")
 
     c = canvas.Canvas(output_pdf_path)
 
-    # Section 0: Classification distribution pie chart and legend
+    # Section 0: Classification distribution pie chart and legend with text
     classification_pie_path = os.path.join(plot_dir, 'classification_distribution_pie.png')
     classification_legend_path = os.path.join(plot_dir, 'legend_classification_distribution.png')
-    classification_paths = [classification_pie_path, classification_legend_path]
-    add_images_to_pdf(c, classification_paths, df, rows=1, cols=2)
+
+    # Draw classification pie chart and legend on the same page
+    c.setPageSize(portrait(letter))
+
+    # Draw classification pie chart on the left
+    c.drawImage(classification_pie_path, 1 * inch, 5 * inch, width=3 * inch, height=3 * inch)
+
+    # Draw legend on the right
+    c.drawImage(classification_legend_path, 4.5 * inch, 5 * inch, width=3 * inch, height=3 * inch)
+
+    # Add the text below the pie chart and legend
+    text = f"Total classifications analyzed: {total_classification_items:,}"
+    c.setFont("Helvetica", 10)
+    c.drawString(1 * inch, 4.5 * inch, text)  # Position the text below the images
+
+    c.showPage()  # Finish this page before starting the next sections
 
     # Section 1: Stacked column timelines (2 per page)
     timeline_paths = sorted(glob.glob(f"{plot_dir}/{prefix_timeline}*.png"))
