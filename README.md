@@ -100,7 +100,8 @@ for more information about this log.
 
 You can see an example report 
 [here](https://github.com/cecat/soundviz/blob/main/example_report.pdf)
-in this repo.
+in this repo (note you can see the October 31 (Halloween) trick-or-treat activities especially
+at the cameras named "front" and "entry").
 
 Please report any issues
 [here](https://github.com/cecat/CeC-HA-Addons/issues). 
