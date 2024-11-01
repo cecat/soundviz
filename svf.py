@@ -148,6 +148,9 @@ def save_legend_as_png(title, colors, labels, output_filename):
         prop={'size': fontsize}
     )
 
+    # align titles to the left
+    legend.get_title().set_ha('left')
+
     # Save the legend as a PNG
     legend_path = os.path.join(plot_dir, output_filename)
     plt.savefig(legend_path, bbox_inches="tight", dpi=300)

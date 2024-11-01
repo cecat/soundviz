@@ -75,8 +75,12 @@ def main():
 
 
     # Define custom groups and colors
-    custom_groups = ['environment', 'birds', 'animals', 'people', 'vehicles', 'insects', 'weather']
-    custom_colors = ['lightblue', 'red', 'orange', 'green', 'yellow', 'navy', 'brown']
+    custom_groups = [ 'environment', 'birds', 'animals', 'insects', 'weather',
+                      'people', 'music', 'vehicles', 
+                      'alert' ]
+    custom_colors = [ 'green', 'lightgreen', '#B6885C', '#FF55BC', 'lightblue',
+                      '#3D02C5', '#05ABD7', 'gray',
+                      'red' ]
 
     # Identify additional groups and map colors
     additional_groups = [g for g in classification_counts.index if g not in custom_groups]
