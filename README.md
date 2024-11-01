@@ -50,8 +50,9 @@ mkdir ./logs
 
 5. From your Home Assistant server running Yamcam, copy a log file to ./logs.
 (log into Home Assistant using *SSH* or *Terminal*)
+
+**FROM HOME ASSISTANT CLI:**
 ```
-[FROM HOME ASSISTANT CLI]
 cd /media/yamcam
 ls -lt
 scp *.csv <your_username>@<yourhost>:/<path to>/soundviz/logs/
