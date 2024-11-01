@@ -35,3 +35,7 @@ detected by each camera (sound source).
 3. Pie graphs showing distribution of event types for each camera (sound source).
 4. Pie graphs showing the distribution of individual yamnet *classes* for each
 *group*.
+
+You can see an example report 
+[here](https://github.com/cecat/soundviz/blob/main/example_report.pdf)
+in this repo.
