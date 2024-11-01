@@ -27,41 +27,41 @@ This tool is written in Python and requires Python 3.7+ and the following librar
 ## Setup Instructions (from Linux command line)
 
 1. Clone this repository
-'''
+```
 git clone git@github.com:cecat/soundviz.git
 cd soundviz
-'''
+```
 
 2. Create a Virtual Environment (Recommended)
-'''
+```
 python3 -m venv viz_env
 source viz_env/bin/activate
-'''
+```
 
 3. Install dependencies
-'''
+```
 pip install -r requirements.txt
-'''
+```
 
 4. Create a ./logs directory for log files.
-'''
+```
 mkdir ./logs
-'''
+```
 
 5. From your Home Assistant server running Yamcam, copy a log file to ./logs.
-'''
+```
 (log into Home Assistant using *SSH* or *Terminal*)
 cd /media/yamcam
 ls -lt
 scp *.csv <your_username>@<yourhost>:/<path to>/soundviz/logs/
-'''
+```
 
 ## Example Usage
 
 ### Select a logfile from ./logs to use as input, then run the tool.
-'''
+```
 python sv.py -i *input.csv* -o *output.pdf*
-'''
+```
 Default input is *./logs/log.csv* and default output is *./plots/Sound_viz.pdf*.
 
 The tool will create a ./plots directory (if not alread there) within which it
@@ -77,9 +77,9 @@ name (people, animals, birds, vehicles, etc.).
 
 Yamcam continuously analyzes 0.975s sound samples from RTSP feed audio channels, 
 producing scores (0.0 to 1.0. Yamcam sound logs have the form:
-'''
+```
 datetime,camera,group,group_score,class,class_score,group_start,group_end
-'''
+```
 
 All scores above Yamcam's *noise_threshold* setting
 (default 0.1) are logged in the *class* and *class_score* columns.  Group
