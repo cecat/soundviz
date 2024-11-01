@@ -15,7 +15,7 @@ Please report any issues
 
 After running the Yamcam addon with *sound_log: true*, a log file is created
 in */media/yamcam* on the Home Assistant system.  See the
-[Yamcam README]((https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
+[Yamcam README](https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
 for more information about this log.
 
 Yamcam uses the Yamnet model to classify sounds, with scores reported, for each
