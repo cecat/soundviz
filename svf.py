@@ -229,29 +229,86 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
 def make_pdf(output_pdf_path, df, total_classification_items):
     print(f"Creating PDF report at {output_pdf_path}.")
 
+    # Create canvas for the PDF
     c = canvas.Canvas(output_pdf_path)
-
-    # Section 0: Classification distribution pie chart and legend with text
-    classification_pie_path = os.path.join(plot_dir, 'classification_distribution_pie.png')
-    classification_legend_path = os.path.join(plot_dir, 'legend_classification_distribution.png')
-
-    # Draw classification pie chart and legend on the same page
     c.setPageSize(portrait(letter))
 
-    # Draw classification pie chart on the left
-    c.drawImage(classification_pie_path, 1 * inch, 5 * inch, width=3 * inch, height=3 * inch)
+    # Title
+    c.setFont("Helvetica-Bold", 24)
+    c.drawCentredString(letter[0] / 2, 10.5 * inch, "Sound Classification Report")
 
-    # Draw legend on the right
-    c.drawImage(classification_legend_path, 4.5 * inch, 5 * inch, width=3 * inch, height=3 * inch)
+    # Date Range
+    date_start = df['datetime'].min().strftime('%Y-%m-%d %H:%M')
+    date_end = df['datetime'].max().strftime('%Y-%m-%d %H:%M')
+    c.setFont("Helvetica", 16)
+    c.drawCentredString(letter[0] / 2, 9.75 * inch, f"Period: {date_start} to {date_end}")
 
-    # Add the text below the pie chart and legend
-    text = f"Total classifications analyzed: {total_classification_items:,}"
-    c.setFont("Helvetica", 10)
-    c.drawString(1 * inch, 4.5 * inch, text)  # Position the text below the images
+    # Total Classifications
+    c.drawCentredString(letter[0] / 2, 9.25 * inch, f"Total Classifications Analyzed: {total_classification_items:,}")
 
-    c.showPage()  # Finish this page before starting the next sections
+    # Insert Pie Chart and Legend
+    classification_pie_path = os.path.join(plot_dir, 'classification_distribution_pie.png')
+    classification_legend_path = os.path.join(plot_dir, 'legend_classification_distribution.png')
+    c.drawImage(classification_pie_path, 1 * inch, 6.00 * inch, width=3 * inch, height=3 * inch)
+    c.drawImage(classification_legend_path, 4.5 * inch, 6.00 * inch, width=3 * inch, height=3 * inch)
 
-    # Section 1: Stacked column timelines (2 per page)
+    # Section Descriptions with 1-inch margins on each side
+    # Define TextObject with the starting position
+    text = c.beginText(1 * inch, 5.25 * inch)
+    text.setFont("Helvetica", 12)
+    text.setLeading(14)  # line spacing
+
+    # Define the wrapping width (7.5 inches) based on page width minus margins
+    wrap_width = letter[0] - 2 * inch
+
+    # Split and wrap text manually for each line in section_text
+    section_text = """
+    Section 1: Timelines with stacked columns showing the mix of sound events per hour for each camera (sound source).
+    Section 2: Pie charts showing the overall distribution of sound event types for each camera (sound source).
+    Section 3: Pie charts for each sound group, showing the distribution of individual yamnet classes within that group.
+    """
+
+    for line in section_text.splitlines():
+        words = line.split()
+        line_text = ""
+        for word in words:
+            # Check width of line with the new word added
+            if c.stringWidth(line_text + " " + word, "Helvetica", 12) < wrap_width:
+                line_text += " " + word
+            else:
+                # Add the current line to the text object and start a new line
+                text.textLine(line_text.strip())
+                line_text = word  # Start a new line with the current word
+        text.textLine(line_text.strip())  # Add the remaining text for the last line
+
+    c.drawText(text)
+
+    # Report Prepared By Line
+    url = "https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3"
+    c.setFont("Helvetica", 12)
+    prepared_by_text = "Report prepared using sound logs from the Yamcam Home Assistant add-on."
+
+    # Draw "Report prepared using sound logs from the" part in black
+    initial_text = "Report prepared using sound logs from the "
+    initial_text_x = (letter[0] / 2) - (c.stringWidth(prepared_by_text) / 2)
+    c.drawString(initial_text_x, 2 * inch, initial_text)
+
+    # Draw "Yamcam" as a colored, clickable link
+    yamcam_text_x = initial_text_x + c.stringWidth(initial_text)
+    c.setFillColor("blue")  # Make link text blue
+    c.drawString(yamcam_text_x, 2 * inch, "Yamcam")
+    c.linkURL(url, (yamcam_text_x, 2 * inch, yamcam_text_x + c.stringWidth("Yamcam"), 2.1 * inch), relative=1)
+    c.setFillColor("black")  # Reset color
+
+    # Draw the rest of the text
+    addon_text_x = yamcam_text_x + c.stringWidth("Yamcam")
+    c.drawString(addon_text_x, 2 * inch, " Home Assistant add-on.")
+
+    # Finalize Cover Page
+    c.showPage()
+
+    # Remaining Sections: Timelines, Camera Pies, Group Pies
+    # Section 1: Timelines (2 per page)
     timeline_paths = sorted(glob.glob(f"{plot_dir}/{prefix_timeline}*.png"))
     add_images_to_pdf(c, timeline_paths, df, rows=2, cols=1)
 
@@ -270,18 +327,15 @@ def make_pdf(output_pdf_path, df, total_classification_items):
         for p in group_pie_files
     ]
 
-    # Build list of pie chart and legend paths
+    # Add pie charts and legends for groups
     group_pie_and_legend_paths = []
     for group in group_names:
         pie_path = os.path.join(plot_dir, f"{prefix_group_pie}{group}.png")
         legend_path = os.path.join(plot_dir, f"{group_pie_legend}{group}.png")
         group_pie_and_legend_paths.extend([pie_path, legend_path])
-
-    # Add images to PDF with 2 columns per row
     add_images_to_pdf(c, group_pie_and_legend_paths, df, rows=4, cols=2)
 
-    # Save the PDF
+    # Save PDF
     c.save()
-
     print(f"PDF report created at {output_pdf_path}")
 
