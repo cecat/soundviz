@@ -22,7 +22,7 @@ This tool is written in Python and requires Python 3.7+ and the following librar
 * matplotlib
 * seaborn
 * reportlab
-* Plilow
+* Pillow
 
 ## Setup Instructions (from Linux command line)
 
