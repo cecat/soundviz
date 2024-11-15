@@ -49,24 +49,49 @@ label_threshold = 5
 percent_threshold = 3
 
 # Directories
-log_dir = './logs'
+default_log_dir = './logs'
 plot_dir = './plots'
 
 # Filenames
-log_filename      = 'log.csv'        # default if not specified in command line
-report_file       = 'Sound_viz.pdf'  # default if not specified in command line
+sample_log_filename  = 'log.csv'        # default if not specified in command line
+report_file          = 'Sound_viz.pdf'  # default if not specified in command line
 # for graphics
-prefix_timeline   = 'cam_timeline_'
-prefix_camera_pie = 'cam_pie_'
-prefix_group_pie  = 'group_pie_'
+prefix_timeline      = 'cam_timeline_'
+prefix_camera_pie    = 'cam_pie_'
+prefix_group_pie     = 'group_pie_'
 # for legends
-cam_pie_legend    = 'legend_cams'
-group_pie_legend  = 'legend_'
+cam_pie_legend       = 'legend_cams'
+group_pie_legend     = 'legend_'
 
 ###### Functions
 
 # Parse optional input and output file args (-i, -o)
 def parse_args():
+    parser = argparse.ArgumentParser(description="Generate a sound visualization PDF report.")
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        help="Specify the output PDF file name (e.g., 'report.pdf'). If not provided, defaults to './plots/Sound_viz.pdf'"
+    )
+    parser.add_argument(
+        "-i", "--input",
+        type=str,
+        help="Specify the input CSV log file (e.g., './logs/log.csv')."
+    )
+    args = parser.parse_args()
+
+    # Set default input file if none is provided
+    if not args.input:
+        args.input = os.path.join(default_log_dir, sample_log_filename)
+
+    # Check if the input file exists
+    if not os.path.exists(args.input):
+        print(f"Error: Input file '{args.input}' does not exist.")
+        sys.exit(1)
+
+    return args
+
+def old_parse_args():
     parser = argparse.ArgumentParser(description="Generate a sound visualization PDF report.")
     parser.add_argument(
         "-o", "--output",
@@ -88,6 +113,16 @@ def check_for_plot_dir(directory):
         os.makedirs(directory, exist_ok=True)
     except OSError as e:
         print(f"Error: Failed to create plot directory '{directory}': {e}")
+        sys.exit(1)
+
+    # now empty it to avoid confusion with old png files
+    try:
+        for file_name in os.listdir(plot_dir):
+            file_path = os.path.join(plot_dir, file_name)
+            if os.path.isfile(file_path):  # Check if it's a file
+                os.remove(file_path)
+    except OSError as e:
+        print(f"Error: Failed to empty plot directory '{directory}': {e}")
         sys.exit(1)
 
 # Convert to percentages
@@ -266,6 +301,8 @@ def make_pdf(output_pdf_path, df, total_classification_items):
     Section 1: Timelines with stacked columns showing the mix of sound events per hour for each camera (sound source).
     Section 2: Pie charts showing the overall distribution of sound event types for each camera (sound source).
     Section 3: Pie charts for each sound group, showing the distribution of individual yamnet classes within that group.
+
+    Note: For short durations (< several hours) Section 1 will not be very interesting as each column is an entire hour.
     """
 
     for line in section_text.splitlines():
