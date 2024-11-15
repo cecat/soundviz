@@ -156,6 +156,10 @@ def generate_pies(
 
 # Generate legend as separate png
 def save_legend_as_png(title, colors, labels, output_filename):
+    if not colors or not labels:
+        print(f"Skipping legend generation for {title} due to lack of data.")
+        return
+
     fontsize = 8
 
     # Create a figure to hold only the legend
