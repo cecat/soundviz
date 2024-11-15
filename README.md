@@ -43,12 +43,15 @@ source viz_env/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Create a ./logs directory for log files.
+4. Create a ./logs directory for log files to be analyzed.
 ```
 mkdir ./logs
 ```
 
-5. From your Home Assistant server running Yamcam, copy a log file to ./logs.
+5. If using this tool to analyze logs from Home Assistant Yamcam add-on.  
+Move copies of logs of interest into ./logs.
+
+From your Home Assistant server running Yamcam, copy a log file to ./logs.
 (log into Home Assistant using *SSH* or *Terminal*)
 
 **FROM HOME ASSISTANT CLI:**
@@ -57,6 +60,10 @@ cd /media/yamcam
 ls -lt
 scp *.csv <your_username>@<yourhost>:/<path to>/soundviz/logs/
 ```
+
+6. If using this tool to analyze logs from the command line SVP tool, move or
+copy logs from the directory where you ran the SVP tool, within its *logs*
+subdirectory.  
 
 ## Example Usage
 
