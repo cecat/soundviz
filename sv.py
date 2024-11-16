@@ -32,6 +32,13 @@ def is_valid_datetime(value):
     except (ValueError, TypeError):
         return False
 
+# Function to determine if a row is a header
+def is_header(row):
+    return row[0].strip().lower() == "datetime"
+
+#
+# MAIN
+#
 def main():
     args = parse_args()
 
@@ -50,13 +57,26 @@ def main():
     print(f"Check for plot directory {plot_dir}.")
     check_for_plot_dir(plot_dir)
 
+    # Read the first row to check for header
+    with open(log_file_path, 'r') as f:
+        first_line = f.readline()
+        # Split the first line by comma to get individual columns
+        first_row = first_line.strip().split(',')
+        has_header = is_header(first_row) # set the header flag for later
+
+    if has_header: #FIX - add verbose option
+        print("Header detected. The first row will be skipped during processing.")
+    else:
+        print("No header detected. All rows will be processed.")
+
     # Estimate total number of chunks
     print("Estimating total number of chunks...")
     with open(log_file_path, 'r') as f:
         total_lines = sum(1 for _ in f)
+    if has_header:
+        total_lines -= 1
     total_chunks = (total_lines + chunk_size - 1) // chunk_size  # Ceiling division
     print(f"Total lines in file: {total_lines}. Estimated total chunks: {total_chunks}.")
-
 
     # Initialize variables for processing
     start_time = None
@@ -83,6 +103,15 @@ def main():
                 "group_start",
                 "group_end"
             ],
+            skiprows=1 if has_header else 0,  # Conditionally skip the first row
+            # specify non-string column (datetime and scores) data types and processes
+            dtype={
+                "group": "str",
+            },
+            converters={
+                "group_score": lambda x: float(x) if x else np.nan,
+                "class_score": lambda x: float(x) if x else np.nan
+            },
             chunksize=chunk_size
         ):
             chunk_number += 1
