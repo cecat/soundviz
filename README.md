@@ -4,7 +4,8 @@
 This is a simple python code to visualize sound characteristics over time
 using sound log files from the
 [Yamcam](https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
-Home Assistant add-on.
+Home Assistant add-on or the command line utility
+[Yamnet Sound Profiler (YSP)](https://github.com/cecat/ysp).
 
 The tool produces a report that includes:
 1. A pie graph showing the distribution of sound groups detected (above 
