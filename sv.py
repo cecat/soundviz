@@ -22,6 +22,9 @@ from svf import (
     save_legend_as_png, cam_pie_legend, group_pie_legend
 )
 
+# chunking logs with millions of rows
+chunk_size = 100000
+
 def is_valid_datetime(value):
     try:
         pd.to_datetime(value)
@@ -47,6 +50,14 @@ def main():
     print(f"Check for plot directory {plot_dir}.")
     check_for_plot_dir(plot_dir)
 
+    # Estimate total number of chunks
+    print("Estimating total number of chunks...")
+    with open(log_file_path, 'r') as f:
+        total_lines = sum(1 for _ in f)
+    total_chunks = (total_lines + chunk_size - 1) // chunk_size  # Ceiling division
+    print(f"Total lines in file: {total_lines}. Estimated total chunks: {total_chunks}.")
+
+
     # Initialize variables for processing
     start_time = None
     end_time = None
@@ -57,7 +68,6 @@ def main():
     group_class_counts = defaultdict(lambda: defaultdict(int))
 
     # Process the file in chunks
-    chunk_size = 100000
     chunk_number = 0
     try:
         for chunk in pd.read_csv(
@@ -76,7 +86,7 @@ def main():
             chunksize=chunk_size
         ):
             chunk_number += 1
-            print(f"Processing chunk {chunk_number}...")
+            print(f"Processing chunk {chunk_number} of {total_chunks}...")
             valid_rows = chunk[chunk['datetime'].apply(is_valid_datetime)].copy()  # Added .copy()
             if valid_rows.empty:
                 continue
