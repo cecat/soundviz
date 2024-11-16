@@ -12,6 +12,7 @@ import matplotlib.ticker as mticker
 import seaborn as sns
 import numpy as np
 import os
+import logging
 from datetime import datetime
 from collections import defaultdict
 
@@ -19,8 +20,9 @@ from svf import (
     plot_dir, check_for_plot_dir, autopct,
     make_pdf, label_threshold, percent_threshold, generate_pies,
     parse_args, prefix_timeline, prefix_camera_pie, prefix_group_pie,
-    save_legend_as_png, cam_pie_legend, group_pie_legend
+    save_legend_as_png, cam_pie_legend, group_pie_legend, setup_logging
 )
+
 
 # chunking logs with millions of rows
 chunk_size = 100000
@@ -41,6 +43,9 @@ def is_header(row):
 #
 def main():
     args = parse_args()
+    verbose = args.verbose
+    silent = args.silent
+    setup_logging(verbose=verbose, silent=silent)   # decide how noisy to be
 
     # Set up output PDF path
     if args.output:
@@ -53,8 +58,8 @@ def main():
     # Set input log file path
     log_file_path = args.input
 
-    print(f"Report will go to {output_pdf_path}.")
-    print(f"Check for plot directory {plot_dir}.")
+    logging.info(f"Report will go to {output_pdf_path}.")
+    #logging.warning(f"Check for plot directory {plot_dir}.")
     check_for_plot_dir(plot_dir)
 
     # Read the first row to check for header
@@ -64,19 +69,19 @@ def main():
         first_row = first_line.strip().split(',')
         has_header = is_header(first_row) # set the header flag for later
 
-    if has_header: #FIX - add verbose option
-        print("Header detected. The first row will be skipped during processing.")
+    if has_header: 
+        logging.info("Header detected. The first row will be skipped during processing.")
     else:
-        print("No header detected. All rows will be processed.")
+        logging.info("No header detected. All rows will be processed.")
 
     # Estimate total number of chunks
-    print("Estimating total number of chunks...")
+    logging.info("Estimating total number of chunks...")
     with open(log_file_path, 'r') as f:
         total_lines = sum(1 for _ in f)
     if has_header:
         total_lines -= 1
     total_chunks = (total_lines + chunk_size - 1) // chunk_size  # Ceiling division
-    print(f"Total lines in file: {total_lines}. Estimated total chunks: {total_chunks}.")
+    logging.info(f"Total lines in file: {total_lines}. Estimated total chunks: {total_chunks}.")
 
     # Initialize variables for processing
     start_time = None
@@ -115,7 +120,7 @@ def main():
             chunksize=chunk_size
         ):
             chunk_number += 1
-            print(f"Processing chunk {chunk_number} of {total_chunks}...")
+            logging.info(f"Processing chunk {chunk_number} of {total_chunks}...")
             valid_rows = chunk[chunk['datetime'].apply(is_valid_datetime)].copy()  # Added .copy()
             if valid_rows.empty:
                 continue
@@ -158,23 +163,23 @@ def main():
                 group_class_counts[group_name][class_name] += count
 
     except FileNotFoundError:
-        print(f"No log file found at {log_file_path}")
+        logging.error(f"No log file found at {log_file_path}")
         sys.exit(1)
 
     # Combine all valid rows into a final DataFrame
     if not aggregated_rows:
-        print("No valid data found in the file.")
+        logging.error("No valid data found in the file.")
         sys.exit(1)
     df = pd.concat(aggregated_rows, ignore_index=True)
 
     ### Section: Overall Classification Distribution Pie Chart ###
-    print("Creating a pie chart for the distribution of all classifications across groups.")
+    logging.info("Creating a pie chart for the distribution of all classifications across groups.")
 
     # Convert total_classification_counts to a Series
     classification_counts = pd.Series(total_classification_counts).sort_values(ascending=False)
 
     total_classification_items = classification_counts.sum()
-    print(f"Total detections (class/class-score rows) used for Classification Distribution: {total_classification_items:,}")
+    logging.info(f"Total detections (class/class-score rows) used for Classification Distribution: {total_classification_items:,}")
 
     # Define custom groups and colors
     custom_groups = ['environment', 'birds', 'animals', 'insects', 'weather',
@@ -227,7 +232,7 @@ def main():
     )
 
     ### Section 1: Stacked Column timelines for each camera ###
-    print("Creating png(s) with event count timelines for each camera.")
+    logging.info("Creating png(s) with event count timelines for each camera.")
 
     # Prepare the DataFrame for timelines
     events_list = []
@@ -310,10 +315,10 @@ def main():
             plt.close()
 
     else:
-        print("No event data available for timelines.")
+        logging.warning("No event data available for timelines.")
 
     ### Section 2: Individual pies for each camera ###
-    print("Creating png(s) with event mix pies for each camera.")
+    logging.info("Creating png(s) with event mix pies for each camera.")
 
     if camera_event_counts:
         # Convert camera_event_counts to DataFrame
@@ -363,10 +368,10 @@ def main():
             output_filename=legend_filename
         )
     else:
-        print("No valid data for cameras. Skipping camera-specific pies.")
+        logging.warning("No valid data for cameras. Skipping camera-specific pies.")
 
     ### Section 3: Individual pies for each group, showing class distribution ###
-    print("Creating png(s) with class mix pies for each group.")
+    logging.info("Creating png(s) with class mix pies for each group.")
 
     if group_class_counts:
         group_data_list = []
@@ -419,10 +424,12 @@ def main():
             output_prefix=prefix_group_pie
         )
     else:
-        print("No valid data for groups. Skipping group-specific pies.")
+        logging.warning("No valid data for groups. Skipping group-specific pies.")
 
     ### Generate the PDF Report ###
     make_pdf(output_pdf_path, df, total_classification_items)
+    if not silent:
+        print(f"PDF report created at {output_pdf_path}")
 
 if __name__ == "__main__":
     main()

@@ -37,6 +37,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import glob
+import logging
 from reportlab.lib.pagesizes import letter, portrait
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
@@ -63,21 +64,40 @@ prefix_group_pie     = 'group_pie_'
 cam_pie_legend       = 'legend_cams'
 group_pie_legend     = 'legend_'
 
+###### Set up logging
+def setup_logging(verbose=False, silent=False):
+    """Configure logging settings."""
+    if verbose:
+        level = logging.INFO
+    elif silent:
+        level = logging.WARNING
+    else:
+        level = logging.ERROR
+    logging.basicConfig(
+        level=level,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler()
+        ]
+    )
+
 ###### Functions
 
-# Parse optional input and output file args (-i, -o)
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate a sound visualization PDF report.")
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
+    parser.add_argument( "-o", "--output", type=str,
         help="Specify the output PDF file name (e.g., 'report.pdf'). If not provided, defaults to './plots/Sound_viz.pdf'"
     )
-    parser.add_argument(
-        "-i", "--input",
-        type=str,
+    parser.add_argument( "-i", "--input", type=str,
         help="Specify the input CSV log file (e.g., './logs/log.csv')."
     )
+    parser.add_argument('-v', '--verbose', action='store_true',
+        help='Enable verbose output'
+    )
+    parser.add_argument('-s', '--silent', action='store_true',
+        help='Suppress all but warning/error output'
+    )
+
     args = parser.parse_args()
 
     # Set default input file if none is provided
@@ -86,7 +106,7 @@ def parse_args():
 
     # Check if the input file exists
     if not os.path.exists(args.input):
-        print(f"Error: Input file '{args.input}' does not exist.")
+        logging.error(f"Error: Input file '{args.input}' does not exist.")
         sys.exit(1)
 
     return args
@@ -108,11 +128,11 @@ def old_parse_args():
 
 # Make sure the output directory exists
 def check_for_plot_dir(directory):
-    print(f"Checking for {directory}")
+    logging.info(f"Checking for {directory}")
     try:
         os.makedirs(directory, exist_ok=True)
     except OSError as e:
-        print(f"Error: Failed to create plot directory '{directory}': {e}")
+        logging.error(f"Error: Failed to create plot directory '{directory}': {e}")
         sys.exit(1)
 
     # now empty it to avoid confusion with old png files
@@ -122,7 +142,7 @@ def check_for_plot_dir(directory):
             if os.path.isfile(file_path):  # Check if it's a file
                 os.remove(file_path)
     except OSError as e:
-        print(f"Error: Failed to empty plot directory '{directory}': {e}")
+        logging.error(f"Error: Failed to empty plot directory '{directory}': {e}")
         sys.exit(1)
 
 # Convert to percentages
@@ -157,7 +177,7 @@ def generate_pies(
 # Generate legend as separate png
 def save_legend_as_png(title, colors, labels, output_filename):
     if not colors or not labels:
-        print(f"Skipping legend generation for {title} due to lack of data.")
+        logging.warning(f"Skipping legend generation for {title} due to lack of data.")
         return
 
     fontsize = 8
@@ -217,7 +237,7 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
             try:
                 img = Image.open(image_path)
             except:
-                print(f"Cannot find {image_path}.")
+                logging.error(f"Cannot find {image_path}.")
                 sys.exit(1)
 
             img_width, img_height = img.size
@@ -266,7 +286,7 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
 
 # Create PDF
 def make_pdf(output_pdf_path, df, total_classification_items):
-    print(f"Creating PDF report at {output_pdf_path}.")
+    logging.info(f"Creating PDF report at {output_pdf_path}.")
 
     # Create canvas for the PDF
     c = canvas.Canvas(output_pdf_path)
@@ -378,5 +398,4 @@ def make_pdf(output_pdf_path, df, total_classification_items):
 
     # Save PDF
     c.save()
-    print(f"PDF report created at {output_pdf_path}")
 
