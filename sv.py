@@ -23,7 +23,6 @@ from svf import (
     save_legend_as_png, cam_pie_legend, group_pie_legend, setup_logging
 )
 
-
 # chunking logs with millions of rows
 chunk_size = 100000
 
@@ -61,6 +60,11 @@ def main():
     logging.info(f"Report will go to {output_pdf_path}.")
     #logging.warning(f"Check for plot directory {plot_dir}.")
     check_for_plot_dir(plot_dir)
+
+### FIX
+    # below to offload into a functino for clarity this is too long
+    # e.g.,
+    # process_log(log_file_path)
 
     # Read the first row to check for header
     with open(log_file_path, 'r') as f:

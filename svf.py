@@ -6,8 +6,11 @@
 #
 
 # Functions in this file:
+#
+##      setup_logging
+#       
 ##      parse_args()
-#       Parse optional input and output file args (-i, -o)
+#       Parse optional input and output file args (-i, -o, -v, -s)
 #
 ##     check_for_plot_dir(directory)
 #      Make sure the output directory exists
