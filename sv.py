@@ -1,10 +1,18 @@
 # SoundViz: A utility for visualizing data from the sound log files produced
-# by the Home Assistant (experimental) Yamcam add-on
+# by the Home Assistant (experimental)
+# Yamcam3 add-on
 # (see https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
+# or the YSP (Yamnet-based Sound Profiler) cli tool.
+# (https://github.com/cecat/ysp)
 #
-# Charlie Catlett October 2024
+# Charlie Catlett November 2024
 #
 # sv.py
+#
+# Relies on functions defined in 
+# sv_functions.py and
+# sv_reporting.py
+
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,8 +24,8 @@ import logging
 from datetime import datetime
 from collections import defaultdict
 
-from svf import (
-    plot_dir, check_for_plot_dir, autopct,
+from sv_functions import (
+    output_dir, check_for_output_dir, autopct,
     make_pdf, label_threshold, percent_threshold, generate_pies,
     parse_args, prefix_timeline, prefix_camera_pie, prefix_group_pie,
     save_legend_as_png, cam_pie_legend, group_pie_legend, setup_logging
@@ -46,20 +54,21 @@ def main():
     silent = args.silent
     setup_logging(verbose=verbose, silent=silent)   # decide how noisy to be
 
+    ### FIX: do this in check_for_output_dir()
     # Set up output PDF path
     if args.output:
         output_pdf_path = args.output
         if not output_pdf_path.lower().endswith('.pdf'):
             output_pdf_path += '.pdf'
     else:
-        output_pdf_path = os.path.join(plot_dir, "Sound_viz.pdf")
+        output_pdf_path = os.path.join(output_dir, "Sound_viz.pdf")
 
     # Set input log file path
     log_file_path = args.input
 
     logging.info(f"Report will go to {output_pdf_path}.")
-    #logging.warning(f"Check for plot directory {plot_dir}.")
-    check_for_plot_dir(plot_dir)
+    #logging.warning(f"Check for plot directory {output_dir}.")
+    check_for_output_dir(output_dir)
 
 ### FIX
     # below to offload into a functino for clarity this is too long
@@ -176,7 +185,12 @@ def main():
         sys.exit(1)
     df = pd.concat(aggregated_rows, ignore_index=True)
 
-    ### Section: Overall Classification Distribution Pie Chart ###
+### Section 0: Overall Classification Distribution Pie Chart ###
+
+    #create_section_0(df, total_classification_counts, output_dir)
+
+###
+
     logging.info("Creating a pie chart for the distribution of all classifications across groups.")
 
     # Convert total_classification_counts to a Series
@@ -222,7 +236,7 @@ def main():
     ax.axis('equal')
     ax.set_title('Distribution of All Classifications Across Groups', fontsize=10)
     plt.tight_layout()
-    classification_pie_filename = f"{plot_dir}/classification_distribution_pie.png"
+    classification_pie_filename = f"{output_dir}/classification_distribution_pie.png"
     plt.savefig(classification_pie_filename)
     plt.close()
 
@@ -315,7 +329,7 @@ def main():
             ax.set_xticklabels(tick_labels, rotation=45, ha='right', fontsize=8)
 
             plt.tight_layout(rect=[0, 0.1, 1, 1])
-            plt.savefig(f"{plot_dir}/{prefix_timeline}{idx + 1}.png", dpi=300)
+            plt.savefig(f"{output_dir}/{prefix_timeline}{idx + 1}.png", dpi=300)
             plt.close()
 
     else:
