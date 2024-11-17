@@ -39,10 +39,10 @@ python3 -m venv viz_env
 source viz_env/bin/activate
 ```
 
-3. Install dependencies and update pip for good measure
+3. Install dependencies (first update pip for good measure)
 ```
-pip install -r requirements.txt
 pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
 4. Create a ./logs directory for log files to be analyzed.
