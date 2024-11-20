@@ -6,13 +6,10 @@
 #
 
 # Functions in this file:
-#
-##      setup_logging
-#       
 ##      parse_args()
-#       Parse optional input and output file args (-i, -o, -v, -s)
+#       Parse optional input and output file args (-i, -o)
 #
-##     check_for_output_dir(directory)
+##     check_for_plot_dir(directory)
 #      Make sure the output directory exists
 #
 ##     autopct(pct)
@@ -26,11 +23,11 @@
 ##     add_images_to_pdf(c, image_paths, df, shift_x=0, shift_y=0)
 #      Add images to PDF
 #
-##     make_pdf(output_dir, output_pdf_path, df)
+##     make_pdf(plot_dir, output_pdf_path, df)
 #      Create PDF
 #
 
-# sv_functions.py
+# svf.py
 
 import os
 import sys
@@ -54,7 +51,7 @@ percent_threshold = 3
 
 # Directories
 default_log_dir = './logs'
-output_dir = './plots'
+plot_dir = './plots'
 
 # Filenames
 sample_log_filename  = 'log.csv'        # default if not specified in command line
@@ -130,7 +127,7 @@ def old_parse_args():
     return parser.parse_args()
 
 # Make sure the output directory exists
-def check_for_output_dir(directory):
+def check_for_plot_dir(directory):
     logging.info(f"Checking for {directory}")
     try:
         os.makedirs(directory, exist_ok=True)
@@ -140,8 +137,8 @@ def check_for_output_dir(directory):
 
     # now empty it to avoid confusion with old png files
     try:
-        for file_name in os.listdir(output_dir):
-            file_path = os.path.join(output_dir, file_name)
+        for file_name in os.listdir(plot_dir):
+            file_path = os.path.join(plot_dir, file_name)
             if os.path.isfile(file_path):  # Check if it's a file
                 os.remove(file_path)
     except OSError as e:
@@ -172,7 +169,7 @@ def generate_pies(
         ax.set_title(title, fontsize=10)
         plt.tight_layout()
 
-        filename = f"{output_dir}/{output_prefix}{title}.png"
+        filename = f"{plot_dir}/{output_prefix}{title}.png"
 
         plt.savefig(filename)
         plt.close()
@@ -214,7 +211,7 @@ def save_legend_as_png(title, colors, labels, output_filename):
     legend.get_title().set_ha('left')
 
     # Save the legend as a PNG
-    legend_path = os.path.join(output_dir, output_filename)
+    legend_path = os.path.join(plot_dir, output_filename)
     plt.savefig(legend_path, bbox_inches="tight", dpi=300)
     plt.close(fig)
 
@@ -309,8 +306,8 @@ def make_pdf(output_pdf_path, df, total_classification_items):
     c.drawCentredString(letter[0] / 2, 9.25 * inch, f"Total Classifications Analyzed: {total_classification_items:,}")
 
     # Insert Pie Chart and Legend
-    classification_pie_path = os.path.join(output_dir, 'classification_distribution_pie.png')
-    classification_legend_path = os.path.join(output_dir, 'legend_classification_distribution.png')
+    classification_pie_path = os.path.join(plot_dir, 'classification_distribution_pie.png')
+    classification_legend_path = os.path.join(plot_dir, 'legend_classification_distribution.png')
     c.drawImage(classification_pie_path, 1 * inch, 6.00 * inch, width=3 * inch, height=3 * inch)
     c.drawImage(classification_legend_path, 4.5 * inch, 6.00 * inch, width=3 * inch, height=3 * inch)
 
@@ -373,17 +370,17 @@ def make_pdf(output_pdf_path, df, total_classification_items):
 
     # Remaining Sections: Timelines, Camera Pies, Group Pies
     # Section 1: Timelines (2 per page)
-    timeline_paths = sorted(glob.glob(f"{output_dir}/{prefix_timeline}*.png"))
+    timeline_paths = sorted(glob.glob(f"{plot_dir}/{prefix_timeline}*.png"))
     add_images_to_pdf(c, timeline_paths, df, rows=2, cols=1)
 
     # Section 2: Camera pies and legend
-    legend_path = os.path.join(output_dir, f"{cam_pie_legend}.png")
-    camera_pie_paths = [legend_path] + sorted(glob.glob(f"{output_dir}/{prefix_camera_pie}*.png"))
+    legend_path = os.path.join(plot_dir, f"{cam_pie_legend}.png")
+    camera_pie_paths = [legend_path] + sorted(glob.glob(f"{plot_dir}/{prefix_camera_pie}*.png"))
     add_images_to_pdf(c, camera_pie_paths, df, rows=4, cols=2)
 
     # Section 3: Group pies and legends
     group_pie_files = sorted([
-        p for p in glob.glob(f"{output_dir}/{prefix_group_pie}*.png")
+        p for p in glob.glob(f"{plot_dir}/{prefix_group_pie}*.png")
         if group_pie_legend not in os.path.basename(p)
     ])
     group_names = [
@@ -394,8 +391,8 @@ def make_pdf(output_pdf_path, df, total_classification_items):
     # Add pie charts and legends for groups
     group_pie_and_legend_paths = []
     for group in group_names:
-        pie_path = os.path.join(output_dir, f"{prefix_group_pie}{group}.png")
-        legend_path = os.path.join(output_dir, f"{group_pie_legend}{group}.png")
+        pie_path = os.path.join(plot_dir, f"{prefix_group_pie}{group}.png")
+        legend_path = os.path.join(plot_dir, f"{group_pie_legend}{group}.png")
         group_pie_and_legend_paths.extend([pie_path, legend_path])
     add_images_to_pdf(c, group_pie_and_legend_paths, df, rows=4, cols=2)
 

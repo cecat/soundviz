@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from collections import defaultdict
 
-from svf import (
+from sv_functions import (
     plot_dir, check_for_plot_dir, autopct,
     make_pdf, label_threshold, percent_threshold, generate_pies,
     parse_args, prefix_timeline, prefix_camera_pie, prefix_group_pie,
@@ -172,6 +172,8 @@ def main():
         sys.exit(1)
     df = pd.concat(aggregated_rows, ignore_index=True)
 
+######### create_section_0 function:
+
     ### Section: Overall Classification Distribution Pie Chart ###
     logging.info("Creating a pie chart for the distribution of all classifications across groups.")
 
@@ -231,7 +233,11 @@ def main():
         output_filename=legend_filename
     )
 
+### end create_section_0
+
+######### create_section_1 function:
     ### Section 1: Stacked Column timelines for each camera ###
+
     logging.info("Creating png(s) with event count timelines for each camera.")
 
     # Prepare the DataFrame for timelines
@@ -317,6 +323,9 @@ def main():
     else:
         logging.warning("No event data available for timelines.")
 
+### end create_section_1
+
+######### create_section_2 function:
     ### Section 2: Individual pies for each camera ###
     logging.info("Creating png(s) with event mix pies for each camera.")
 
@@ -369,7 +378,9 @@ def main():
         )
     else:
         logging.warning("No valid data for cameras. Skipping camera-specific pies.")
+### end create_section_2
 
+######### create_section_3 function:
     ### Section 3: Individual pies for each group, showing class distribution ###
     logging.info("Creating png(s) with class mix pies for each group.")
 
@@ -425,6 +436,8 @@ def main():
         )
     else:
         logging.warning("No valid data for groups. Skipping group-specific pies.")
+
+### end create_section_3
 
     ### Generate the PDF Report ###
     make_pdf(output_pdf_path, df, total_classification_items)
