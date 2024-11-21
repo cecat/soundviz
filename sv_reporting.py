@@ -2,6 +2,19 @@
 #
 # Charlie Catlett November 2024
 #
+# Functions to maintain consistent color scheme and ordering of groups in pie charts
+#
+#       get_group_colors(additional_groups=None)
+#       get_event_group_order(all_event_groups)
+#
+# Functions to create individual report sections
+#
+#       create_section_0(df, total_classification_counts, output_dir)
+#       create_section_1(df, hourly_event_counts, output_dir)
+#       create_section_2(pivot_table, camera_event_counts, events_df, output_dir)
+#       create_section_3(group_class_counts, output_dir)
+#
+
 # sv_reporting.py
 
 import sys
@@ -29,6 +42,8 @@ custom_colors = ['green', 'lightgreen', '#B6885C', '#FF55BC', 'lightblue',
                  '#3D02C5', '#05ABD7', 'gray', 'red']
 
 
+# Consistent graph coclor scheme
+
 def get_group_colors(additional_groups=None):
     """Generate group-to-color mappings."""
     if additional_groups is None:
@@ -38,6 +53,7 @@ def get_group_colors(additional_groups=None):
     group_colors.update(zip(additional_groups, additional_colors))
     return group_colors
 
+# Consistent sequence of groups (therefore colors) 
 
 def get_event_group_order(all_event_groups):
     """Combine custom groups with additional groups for consistent ordering."""
@@ -45,8 +61,9 @@ def get_event_group_order(all_event_groups):
     return custom_groups + additional_event_groups
 
 
+###--- Overall distribution of sound groups detected from all cameras over entire timeline
+
 def create_section_0(df, total_classification_counts, output_dir):
-    """Overall Classification Distribution Pie Chart."""
     logging.info("Creating a pie chart for the distribution of all classifications across groups.")
     classification_counts = pd.Series(total_classification_counts).sort_values(ascending=False)
     total_classification_items = classification_counts.sum()
@@ -83,9 +100,9 @@ def create_section_0(df, total_classification_counts, output_dir):
         output_filename= "classification_legend.png"
     )
 
+###--- Stacked column timelines for each camera showing group events mix over time
 
 def create_section_1(df, hourly_event_counts, output_dir):
-    """Stacked Column Timelines for Each Camera."""
     logging.info("Creating png(s) with event count timelines for each camera.")
     events_list = [
         {'hour': hour, 'camera': camera, 'group_start': group, 'count': count}
@@ -135,9 +152,9 @@ def create_section_1(df, hourly_event_counts, output_dir):
 
     return (events_df, pivot_table)
 
+###--- Sound class distribution per camera
 
 def create_section_2(pivot_table, camera_event_counts, events_df, output_dir):
-    """Individual Pies for Each Camera."""
     logging.info("Creating png(s) with event mix pies for each camera.")
     if not camera_event_counts:
         logging.warning("No valid data for cameras. Skipping camera-specific pies.")
@@ -173,25 +190,43 @@ def create_section_2(pivot_table, camera_event_counts, events_df, output_dir):
         output_filename=f"{cam_pie_legend}.png"  
     )
 
-def create_section_3(group_class_counts, output_dir):
-    """Individual Pies for Each Group, Showing Class Distribution."""
+###--- Class distribution within each group, across all cameras and entire timeline
+
+def create_section_3(group_class_counts, total_classes, output_dir):
+    """
+    Create pie graphs for each sound group, including a legend indicating the
+    number and percentage of classifications for the group.
+    """
     logging.info("Creating png(s) with class mix pies for each group.")
 
     if not group_class_counts:
-        logging.warning("No valid data for groups. Skipping group-specific pies.")
+        logging.info("No valid data for groups. Skipping group-specific pies.")
         return
+
+    loging.info("we have data... continuing")
 
     group_data_list = []
     group_titles = []
     group_labels_list = []
     group_colors_list = []
 
+    # Total classifications (m)
+    m = total_classes
+    logging.info(f"{m} total classes.")
+
     for group, class_counts in group_class_counts.items():
+        # Create series and filter out empty data
         data = pd.Series(class_counts).sort_values(ascending=False)
         total_count = data.sum()
         data = data[data > 0]
         if data.empty:
+            logging.info("no date - skipping.")
             continue  # Skip groups with no data
+
+        # Calculate number of classifications for the group (n) and percentage (p)
+        n = total_count
+        p = (n / m) * 100 if m > 0 else 0
+        logging.info(f"{p} % are from this class.")
 
         # Top-k classes and other aggregation
         top_k = 6
@@ -208,15 +243,18 @@ def create_section_3(group_class_counts, output_dir):
 
         data_colors = sns.color_palette('pastel', len(top_classes))
 
+        # Append data for pie chart
         group_data_list.append(top_classes)
-        group_titles.append(f'{group}')
+        group_titles.append(f'{group} ({n} of {m}; {p:.1f}%)')  # Updated title
         group_labels_list.append(labels)
         group_colors_list.append(data_colors)
 
         # Generate legend for each group
-        legend_filename = os.path.join(output_dir, f"{group_pie_legend}_{group}.png")
+        legend_filename = f"{group_pie_legend}_{group}.png"
+        logging.info(f"Title: {group} ({n} of {m}; {p:.1f}%)")
+
         save_legend_as_png(
-            title=group,
+            title=f"{group} ({n} of {m}; {p:.1f}%)",  # Updated legend title
             colors=data_colors,
             labels=top_classes.index.tolist(),
             output_filename=legend_filename

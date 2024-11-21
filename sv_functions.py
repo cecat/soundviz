@@ -1,15 +1,18 @@
 # Functions for a utility for visualizing data from the sound log files produced
-# by the Home Assistant (experimental) Yamcam add-on
-# (see https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
+# by the Home Assistant (experimental) Yamcam add-on or the Yamnet Sound Profiler (YSP)
+# MacOS command line tool.
+# Yamcam HA Add-on: https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3
+# Yamnet Sound Profiler: https://github.com/cecat/ysp
 #
-# Charlie Catlett October 2024
+# Charlie Catlett - November 2024
 #
 
 # Functions in this file:
+#
 ##      parse_args()
 #       Parse optional input and output file args (-i, -o)
 #
-##     check_for_plot_dir(directory)
+##     check_for_output_dir(directory)
 #      Make sure the output directory exists
 #
 ##     autopct(pct)
@@ -23,7 +26,7 @@
 ##     add_images_to_pdf(c, image_paths, df, shift_x=0, shift_y=0)
 #      Add images to PDF
 #
-##     make_pdf(plot_dir, output_pdf_path, df)
+##     make_pdf(output_dir, output_pdf_path, df)
 #      Create PDF
 #
 
@@ -46,12 +49,13 @@ from PIL import Image
 
 # Constants
 url = "https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3"
+url2 = "https://github.com/cecat/ysp"
 label_threshold = 5
 percent_threshold = 3
 
 # Directories
 default_log_dir = './logs'
-plot_dir = './plots'
+output_dir = './plots'
 
 # Filenames
 sample_log_filename  = 'log.csv'        # default if not specified in command line
@@ -111,23 +115,8 @@ def parse_args():
 
     return args
 
-def old_parse_args():
-    parser = argparse.ArgumentParser(description="Generate a sound visualization PDF report.")
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        help="Specify the output PDF file name (e.g., 'report.pdf'). If not provided, defaults to './plots/Sound_viz.pdf'"
-    )
-    parser.add_argument(
-        "-i", "--input",
-        type=str,
-        default="./logs/log.csv",  # Default input filename
-        help="Specify the input CSV log file (e.g., './logs/log.csv')."
-    )
-    return parser.parse_args()
-
 # Make sure the output directory exists
-def check_for_plot_dir(directory):
+def check_for_output_dir(directory):
     logging.info(f"Checking for {directory}")
     try:
         os.makedirs(directory, exist_ok=True)
@@ -137,8 +126,8 @@ def check_for_plot_dir(directory):
 
     # now empty it to avoid confusion with old png files
     try:
-        for file_name in os.listdir(plot_dir):
-            file_path = os.path.join(plot_dir, file_name)
+        for file_name in os.listdir(output_dir):
+            file_path = os.path.join(output_dir, file_name)
             if os.path.isfile(file_path):  # Check if it's a file
                 os.remove(file_path)
     except OSError as e:
@@ -169,7 +158,7 @@ def generate_pies(
         ax.set_title(title, fontsize=10)
         plt.tight_layout()
 
-        filename = f"{plot_dir}/{output_prefix}{title}.png"
+        filename = f"{output_dir}/{output_prefix}{title}.png"
 
         plt.savefig(filename)
         plt.close()
@@ -211,7 +200,7 @@ def save_legend_as_png(title, colors, labels, output_filename):
     legend.get_title().set_ha('left')
 
     # Save the legend as a PNG
-    legend_path = os.path.join(plot_dir, output_filename)
+    legend_path = os.path.join(output_dir, output_filename)
     plt.savefig(legend_path, bbox_inches="tight", dpi=300)
     plt.close(fig)
 
@@ -284,7 +273,54 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
 
         c.showPage()
 
+# Make the footer with clickable links
+
+def make_footer(c):
+    prepared_by_text_line_1 = "Report prepared using sound logs from the Yamcam Home Assistant add-on"
+    prepared_by_text_line_2 = "or the Yamnet Sound Profiler (YSP) command line tool."
+
+    # Define left margin
+    left_margin = 1 * inch
+
+    # Calculate the x-position for the center alignment
+    text_width_line_1 = c.stringWidth(prepared_by_text_line_1, "Helvetica", 10)
+    text_width_line_2 = c.stringWidth(prepared_by_text_line_2, "Helvetica", 10)
+    page_width = letter[0]
+
+    # Line 1
+    initial_text_x = max(left_margin, (page_width - text_width_line_1) / 2)
+    c.setFont("Helvetica", 10)
+    c.drawString(initial_text_x, 2 * inch, "Report prepared using sound logs from the ")
+
+    # Yamcam clickable link
+    yamcam_text_x = initial_text_x + c.stringWidth("Report prepared using sound logs from the ", "Helvetica", 10)
+    c.setFillColor("blue")
+    c.drawString(yamcam_text_x, 2 * inch, "Yamcam")
+    c.linkURL(url, (yamcam_text_x, 2 * inch, yamcam_text_x + c.stringWidth("Yamcam", "Helvetica", 10), 2.1 * inch), relative=1)
+
+    # Reset to black and draw "Home Assistant add-on"
+    c.setFillColor("black")
+    addon_text_x = yamcam_text_x + c.stringWidth("Yamcam", "Helvetica", 10)
+    c.drawString(addon_text_x, 2 * inch, " Home Assistant add-on")
+
+    # Line 2
+    text_line_2_x = max(left_margin, (page_width - text_width_line_2) / 2)
+    c.drawString(text_line_2_x, 1.8 * inch, "or the ")
+
+    # YSP clickable link
+    ysp_text_x = text_line_2_x + c.stringWidth("or the ", "Helvetica", 10)
+    c.setFillColor("blue")
+    c.drawString(ysp_text_x, 1.8 * inch, "Yamnet Sound Profiler (YSP)")
+    c.linkURL(url2, (ysp_text_x, 1.8 * inch, ysp_text_x + c.stringWidth("Yamnet Sound Profiler (YSP)", "Helvetica", 10), 1.9 * inch), relative=1)
+
+    # Reset to black and draw the suffix
+    c.setFillColor("black")
+    suffix_text_x = ysp_text_x + c.stringWidth("Yamnet Sound Profiler (YSP)", "Helvetica", 10)
+    c.drawString(suffix_text_x, 1.8 * inch, " command line tool.")
+
+
 # Create PDF
+
 def make_pdf(output_pdf_path, df, total_classification_items):
     logging.info(f"Creating PDF report at {output_pdf_path}.")
 
@@ -306,8 +342,8 @@ def make_pdf(output_pdf_path, df, total_classification_items):
     c.drawCentredString(letter[0] / 2, 9.25 * inch, f"Total Classifications Analyzed: {total_classification_items:,}")
 
     # Insert Pie Chart and Legend
-    classification_pie_path = os.path.join(plot_dir, 'classification_distribution_pie.png')
-    classification_legend_path = os.path.join(plot_dir, 'legend_classification_distribution.png')
+    classification_pie_path = os.path.join(output_dir, 'classification_distribution_pie.png')
+    classification_legend_path = os.path.join(output_dir, 'legend_classification_distribution.png')
     c.drawImage(classification_pie_path, 1 * inch, 6.00 * inch, width=3 * inch, height=3 * inch)
     c.drawImage(classification_legend_path, 4.5 * inch, 6.00 * inch, width=3 * inch, height=3 * inch)
 
@@ -349,38 +385,25 @@ def make_pdf(output_pdf_path, df, total_classification_items):
     c.setFont("Helvetica", 12)
     prepared_by_text = "Report prepared using sound logs from the Yamcam Home Assistant add-on."
 
-    # Draw "Report prepared using sound logs from the" part in black
-    initial_text = "Report prepared using sound logs from the "
-    initial_text_x = (letter[0] / 2) - (c.stringWidth(prepared_by_text) / 2)
-    c.drawString(initial_text_x, 2 * inch, initial_text)
-
-    # Draw "Yamcam" as a colored, clickable link
-    yamcam_text_x = initial_text_x + c.stringWidth(initial_text)
-    c.setFillColor("blue")  # Make link text blue
-    c.drawString(yamcam_text_x, 2 * inch, "Yamcam")
-    c.linkURL(url, (yamcam_text_x, 2 * inch, yamcam_text_x + c.stringWidth("Yamcam"), 2.1 * inch), relative=1)
-    c.setFillColor("black")  # Reset color
-
-    # Draw the rest of the text
-    addon_text_x = yamcam_text_x + c.stringWidth("Yamcam")
-    c.drawString(addon_text_x, 2 * inch, " Home Assistant add-on.")
+    # Add footer with links
+    make_footer(c)
 
     # Finalize Cover Page
     c.showPage()
 
     # Remaining Sections: Timelines, Camera Pies, Group Pies
     # Section 1: Timelines (2 per page)
-    timeline_paths = sorted(glob.glob(f"{plot_dir}/{prefix_timeline}*.png"))
+    timeline_paths = sorted(glob.glob(f"{output_dir}/{prefix_timeline}*.png"))
     add_images_to_pdf(c, timeline_paths, df, rows=2, cols=1)
 
     # Section 2: Camera pies and legend
-    legend_path = os.path.join(plot_dir, f"{cam_pie_legend}.png")
-    camera_pie_paths = [legend_path] + sorted(glob.glob(f"{plot_dir}/{prefix_camera_pie}*.png"))
+    legend_path = os.path.join(output_dir, f"{cam_pie_legend}.png")
+    camera_pie_paths = [legend_path] + sorted(glob.glob(f"{output_dir}/{prefix_camera_pie}*.png"))
     add_images_to_pdf(c, camera_pie_paths, df, rows=4, cols=2)
 
     # Section 3: Group pies and legends
     group_pie_files = sorted([
-        p for p in glob.glob(f"{plot_dir}/{prefix_group_pie}*.png")
+        p for p in glob.glob(f"{output_dir}/{prefix_group_pie}*.png")
         if group_pie_legend not in os.path.basename(p)
     ])
     group_names = [
@@ -391,8 +414,8 @@ def make_pdf(output_pdf_path, df, total_classification_items):
     # Add pie charts and legends for groups
     group_pie_and_legend_paths = []
     for group in group_names:
-        pie_path = os.path.join(plot_dir, f"{prefix_group_pie}{group}.png")
-        legend_path = os.path.join(plot_dir, f"{group_pie_legend}{group}.png")
+        pie_path = os.path.join(output_dir, f"{prefix_group_pie}{group}.png")
+        legend_path = os.path.join(output_dir, f"{group_pie_legend}{group}.png")
         group_pie_and_legend_paths.extend([pie_path, legend_path])
     add_images_to_pdf(c, group_pie_and_legend_paths, df, rows=4, cols=2)
 
