@@ -27,7 +27,7 @@
 #      Create PDF
 #
 
-# svf.py
+# sv_functions.py
 
 import os
 import sys
