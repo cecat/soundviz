@@ -138,4 +138,4 @@ in this repo (note you can see the October 31 (Halloween) trick-or-treat activit
 at the cameras named "front" and "entry").
 
 Please report any issues
-[here](https://github.com/cecat/CeC-HA-Addons/issues). 
+[here](https://github.com/cecat/soundviz/issues). 
