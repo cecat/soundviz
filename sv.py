@@ -21,7 +21,7 @@ from sv_functions import (
     make_pdf, label_threshold, percent_threshold, generate_pies,
     parse_args, prefix_timeline, prefix_camera_pie, prefix_group_pie,
     save_legend_as_png, cam_pie_legend, group_pie_legend, setup_logging,
-    is_valid_datetime, process_chunk
+    is_valid_datetime, process_chunk, convert_group_score, convert_class_score
 )
 
 from sv_graphs import SoundVisualizer
@@ -38,12 +38,13 @@ def is_header(row):
 # MAIN
 #
 def main():
+
+    ### Set up
     args = parse_args()
     verbose = args.verbose
     silent = args.silent
     setup_logging(verbose=verbose, silent=silent)   # decide how noisy to be
 
-    # Set up output PDF path
     if args.output:
         output_pdf_path = args.output
         if not output_pdf_path.lower().endswith('.pdf'):
@@ -51,12 +52,9 @@ def main():
     else:
         output_pdf_path = os.path.join(plot_dir, "Sound_viz.pdf")
 
-    # Set input log file path
     log_file_path = args.input
-
-    logging.info(f"Report will go to {output_pdf_path}.")
-    #logging.warning(f"Check for plot directory {plot_dir}.")
     check_for_plot_dir(plot_dir)
+    logging.info(f"Report will go to {output_pdf_path}.")
 
     # Read the first row to check for header
     with open(log_file_path, 'r') as f:
@@ -111,8 +109,8 @@ def main():
                 "group": "str",
             },
             converters={
-                "group_score": lambda x: float(x) if x else np.nan,
-                "class_score": lambda x: float(x) if x else np.nan
+                "group_score": convert_group_score,
+                "class_score": convert_class_score
             },
             chunksize=chunk_size
         ):

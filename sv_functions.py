@@ -84,6 +84,7 @@ def setup_logging(verbose=False, silent=False):
 ###### Functions
 
 def parse_args():
+    """Parse arguments and options."""
     parser = argparse.ArgumentParser(description="Generate a sound visualization PDF report.")
     parser.add_argument( "-o", "--output", type=str,
         help="Specify the output PDF file name (e.g., 'report.pdf'). If not provided, defaults to './plots/Sound_viz.pdf'"
@@ -111,23 +112,9 @@ def parse_args():
 
     return args
 
-def old_parse_args():
-    parser = argparse.ArgumentParser(description="Generate a sound visualization PDF report.")
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        help="Specify the output PDF file name (e.g., 'report.pdf'). If not provided, defaults to './plots/Sound_viz.pdf'"
-    )
-    parser.add_argument(
-        "-i", "--input",
-        type=str,
-        default="./logs/log.csv",  # Default input filename
-        help="Specify the input CSV log file (e.g., './logs/log.csv')."
-    )
-    return parser.parse_args()
 
-# Make sure the output directory exists
 def check_for_plot_dir(directory):
+    """Make sure plot_dir exists."""
     logging.info(f"Checking for {directory}")
     try:
         os.makedirs(directory, exist_ok=True)
@@ -148,17 +135,34 @@ def check_for_plot_dir(directory):
 #
 #### Process Chunks
 #
+
+def convert_group_score(value):
+    """Convert group_score to a float or NaN if the value is empty."""
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return np.nan
+
+
+def convert_class_score(value):
+    """Convert class_score to a float or NaN if the value is empty."""
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return np.nan
+
 def is_valid_datetime(value):
+    """Check to see if field is a date/time."""
     try:
         pd.to_datetime(value)
         return True
     except (ValueError, TypeError):
         return False
 
-# Process a chunk
 def process_chunk(chunk, has_header, start_time, end_time,
                   total_classification_counts, camera_event_counts,
                   hourly_event_counts, group_class_counts, aggregated_rows):
+    """Process a chunk."""
     # Filter valid rows
     valid_rows = chunk[chunk['datetime'].apply(is_valid_datetime)].copy()  # Added .copy()
     if valid_rows.empty:
@@ -206,14 +210,14 @@ def process_chunk(chunk, has_header, start_time, end_time,
 #
 #### Graphing functions
 #
-# Convert to percentages
 def autopct(pct):
+    """Convert to percentages."""
     return f'{pct:.1f}%' if pct >= percent_threshold else ''
 
-# Create individual pie charts
-def generate_pies(
-    data_list, titles, labels_list, colors_list, output_prefix
+
+def generate_pies( data_list, titles, labels_list, colors_list, output_prefix
 ):
+    """Create individual pie charts."""
     for idx, (data, title, labels, colors) in enumerate(
         zip(data_list, titles, labels_list, colors_list)
     ):
@@ -235,8 +239,9 @@ def generate_pies(
         plt.savefig(filename)
         plt.close()
 
-# Generate legend as separate png
+
 def save_legend_as_png(title, colors, labels, output_filename):
+    """Create legend as a separate png file."""
     if not colors or not labels:
         logging.warning(f"Skipping legend generation for {title} due to lack of data.")
         return
@@ -276,8 +281,9 @@ def save_legend_as_png(title, colors, labels, output_filename):
     plt.savefig(legend_path, bbox_inches="tight", dpi=300)
     plt.close(fig)
 
-# Add images to PDF
+
 def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
+    """Insert images to build PDF report file."""
     # URL and footer text definitions
     log_start_date = df['datetime'].min().strftime('%Y-%m-%d %H:%M')
     log_end_date = df['datetime'].max().strftime('%Y-%m-%d %H:%M')
@@ -345,8 +351,9 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
 
         c.showPage()
 
-# Create PDF
+
 def make_pdf(output_pdf_path, df, total_classification_items):
+    """Create the final PDF file."""
     logging.info(f"Creating PDF report at {output_pdf_path}.")
 
     # Create canvas for the PDF
