@@ -145,6 +145,67 @@ def check_for_plot_dir(directory):
         logging.error(f"Error: Failed to empty plot directory '{directory}': {e}")
         sys.exit(1)
 
+#
+#### Process Chunks
+#
+def is_valid_datetime(value):
+    try:
+        pd.to_datetime(value)
+        return True
+    except (ValueError, TypeError):
+        return False
+
+# Process a chunk
+def process_chunk(chunk, has_header, start_time, end_time,
+                  total_classification_counts, camera_event_counts,
+                  hourly_event_counts, group_class_counts, aggregated_rows):
+    # Filter valid rows
+    valid_rows = chunk[chunk['datetime'].apply(is_valid_datetime)].copy()  # Added .copy()
+    if valid_rows.empty:
+        return start_time, end_time
+
+    # Convert datetime column
+    valid_rows['datetime'] = pd.to_datetime(valid_rows['datetime'])
+    valid_rows['hour'] = valid_rows['datetime'].dt.floor('h')
+
+    # Update start and end times
+    if start_time is None or valid_rows['datetime'].min() < start_time:
+        start_time = valid_rows['datetime'].min()
+    if end_time is None or valid_rows['datetime'].max() > end_time:
+        end_time = valid_rows['datetime'].max()
+
+    # Append valid rows to aggregated data
+    aggregated_rows.append(valid_rows)
+
+    # Extract group names from 'class' column
+    valid_rows[['group_name', 'class_name']] = valid_rows['class'].str.split('.', n=1, expand=True)
+
+    # Update total classification counts
+    group_counts = valid_rows['group_name'].value_counts()
+    for group, count in group_counts.items():
+        total_classification_counts[group] += count
+
+    # Update camera event counts
+    camera_counts = valid_rows['camera'].value_counts()
+    for camera, count in camera_counts.items():
+        camera_event_counts[camera] += count
+
+    # Update hourly event counts
+    events = valid_rows[valid_rows['group_start'].notna()]
+    hourly_chunk_counts = events.groupby(['hour', 'camera', 'group_start']).size()
+    for (hour, camera, group_start), count in hourly_chunk_counts.items():
+        hourly_event_counts[hour][camera][group_start] += count
+
+    # Update group class counts
+    class_counts = valid_rows.groupby(['group_name', 'class_name']).size()
+    for (group_name, class_name), count in class_counts.items():
+        group_class_counts[group_name][class_name] += count
+
+    return start_time, end_time
+
+#
+#### Graphing functions
+#
 # Convert to percentages
 def autopct(pct):
     return f'{pct:.1f}%' if pct >= percent_threshold else ''
