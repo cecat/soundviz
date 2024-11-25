@@ -43,6 +43,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.colors import blue
 from PIL import Image
+from collections import defaultdict
+
 
 # Constants
 url = "https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3"
@@ -159,7 +161,61 @@ def is_valid_datetime(value):
     except (ValueError, TypeError):
         return False
 
-def process_chunk(chunk, has_header, start_time, end_time,
+def process_chunk(chunk, has_header):
+    """Process a single chunk and return the results."""
+    results = {
+        "total_classification_counts": defaultdict(int),
+        "camera_event_counts": defaultdict(int),
+        "hourly_event_counts": defaultdict(lambda: defaultdict(lambda: defaultdict(int))),
+        "group_class_counts": defaultdict(lambda: defaultdict(int)),
+        "start_time": None,
+        "end_time": None,
+        "aggregated_rows": []
+    }
+
+    # Filter valid rows
+    valid_rows = chunk[chunk['datetime'].apply(is_valid_datetime)].copy()
+    if valid_rows.empty:
+        return results
+
+    # Convert datetime column
+    valid_rows['datetime'] = pd.to_datetime(valid_rows['datetime'])
+    valid_rows['hour'] = valid_rows['datetime'].dt.floor('h')
+
+    # Update start and end times
+    results["start_time"] = valid_rows['datetime'].min()
+    results["end_time"] = valid_rows['datetime'].max()
+
+    # Append valid rows to aggregated data
+    results["aggregated_rows"].append(valid_rows)
+
+    # Extract group names from 'class' column
+    valid_rows[['group_name', 'class_name']] = valid_rows['class'].str.split('.', n=1, expand=True)
+
+    # Update classification counts
+    group_counts = valid_rows['group_name'].value_counts()
+    for group, count in group_counts.items():
+        results["total_classification_counts"][group] += count
+
+    # Update camera event counts
+    camera_counts = valid_rows['camera'].value_counts()
+    for camera, count in camera_counts.items():
+        results["camera_event_counts"][camera] += count
+
+    # Update hourly event counts
+    events = valid_rows[valid_rows['group_start'].notna()]
+    hourly_chunk_counts = events.groupby(['hour', 'camera', 'group_start']).size()
+    for (hour, camera, group_start), count in hourly_chunk_counts.items():
+        results["hourly_event_counts"][hour][camera][group_start] += count
+
+    # Update group class counts
+    class_counts = valid_rows.groupby(['group_name', 'class_name']).size()
+    for (group_name, class_name), count in class_counts.items():
+        results["group_class_counts"][group_name][class_name] += count
+
+    return results
+
+def old_process_chunk(chunk, has_header, start_time, end_time,
                   total_classification_counts, camera_event_counts,
                   hourly_event_counts, group_class_counts, aggregated_rows):
     """Process a chunk."""

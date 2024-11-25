@@ -75,18 +75,18 @@ def main():
     if has_header:
         total_lines -= 1
     total_chunks = (total_lines + chunk_size - 1) // chunk_size  # Ceiling division
-    if not silent and total_chunks > 10:
-        print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks.")
+    if not silent and total_chunks > 5:
+        print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks. Will take a few minutes.")
     logging.info(f"Total lines in file: {total_lines}. Estimated total chunks: {total_chunks}.")
 
-    # Initialize variables for processing
-    start_time = None
-    end_time = None
+    # Initialize variables for aggregation
     aggregated_rows = []
     total_classification_counts = defaultdict(int)
     camera_event_counts = defaultdict(int)
     hourly_event_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
     group_class_counts = defaultdict(lambda: defaultdict(int))
+    start_time = None
+    end_time = None
 
     # Process the file in chunks
     chunk_number = 0
@@ -117,18 +117,36 @@ def main():
             chunk_number += 1
             logging.info(f"Processing chunk {chunk_number} of {total_chunks}...")
 
-            # Call the function and update the variables
-            start_time, end_time = process_chunk(
-                chunk,
-                has_header,
-                start_time,
-                end_time,
-                total_classification_counts,
-                camera_event_counts,
-                hourly_event_counts,
-                group_class_counts,
-                aggregated_rows
-            )
+             # Process a chunk
+            results = process_chunk(chunk, has_header)
+
+            # Aggregate results
+            aggregated_rows.extend(results["aggregated_rows"])
+
+            for group, count in results["total_classification_counts"].items():
+                total_classification_counts[group] += count
+
+            for camera, count in results["camera_event_counts"].items():
+                camera_event_counts[camera] += count
+
+            for hour, cameras in results["hourly_event_counts"].items():
+                for camera, groups in cameras.items():
+                    for group, count in groups.items():
+                        hourly_event_counts[hour][camera][group] += count
+
+            for group_name, classes in results["group_class_counts"].items():
+                for class_name, count in classes.items():
+                    group_class_counts[group_name][class_name] += count
+
+            if results["end_time"]:
+                if end_time is None or results["end_time"] > end_time:
+                    end_time = results["end_time"]
+
+            if results["start_time"]:
+                if start_time is None or results["start_time"] < start_time:
+                    start_time = results["start_time"]
+
+
     except FileNotFoundError:
         logging.error(f"No log file found at {log_file_path}")
         sys.exit(1)
