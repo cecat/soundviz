@@ -23,7 +23,8 @@ This tool is written in Python and requires Python 3.7+ and the following librar
 * matplotlib
 * seaborn
 * reportlab
-* Pillow
+* pillow
+* multiprocessing (built-in module)
 
 ## Setup Instructions (from Linux command line)
 
@@ -50,7 +51,10 @@ pip install -r requirements.txt
 mkdir ./logs
 ```
 
-5. If using this tool to analyze logs from Home Assistant Yamcam add-on.  
+5. Where to find the logs you want to analyze depends on which tool you used
+to generate them:
+
+5.1 If using this tool to analyze logs from Home Assistant Yamcam add-on.  
 Move copies of logs of interest into ./logs.
 
 From your Home Assistant server running Yamcam, copy a log file to ./logs.
@@ -63,9 +67,12 @@ ls -lt
 scp *.csv <your_username>@<yourhost>:/<path to>/soundviz/logs/
 ```
 
-6. If using this tool to analyze logs from the command line SVP tool, move or
+5.2 If using this tool to analyze logs from the command line SVP tool, move or
 copy logs from the directory where you ran the SVP tool, within its *logs*
-subdirectory.  
+subdirectory.  From your soundviz directory:
+```
+cp <path_to_svp>/logs/*.csv ./logs
+```
 
 ## Example Usage
 
