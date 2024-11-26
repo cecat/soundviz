@@ -212,7 +212,6 @@ def process_chunk(chunk):
         dict: A dictionary containing aggregated results for the chunk.
     """
     # Show progress
-    print(".", end="", flush=True)
     # Initialize results with nested defaultdicts
     results = {
         "total_classification_counts": defaultdict(int),

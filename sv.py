@@ -108,8 +108,10 @@ def main():
         num_workers = os.cpu_count() or 4
         with Pool(processes=num_workers) as pool:
             results_list = pool.map(process_chunk, chunks)
-            for _ in results_list:
-                print(".", end="", flush=True)
+            if not silent:
+                for _ in results_list:
+                    print(".", end="", flush=True)
+                print() # kick to new line for subsequent log messages
 
         # Aggregate results
         for results in results_list:
