@@ -101,6 +101,9 @@ log messages if something went awry, such as not finding the specified log file
 (i.e., a fatal error) or there is missing data (e.g., something that would cause
 the report to be incomplete would not cause the tool to bail).
 
+The *-c* or *--cores* option allows you to specify how many cores to use, up to the
+number of cores available in your processor.
+
 ## More Information
 
 This tool is desiged specifically for sound log files produced by Yamcam or
@@ -108,7 +111,7 @@ the command line tool Yamnet Sound Proviler (ysp), which can produce
 log files -- csv files with millions of rows.  The tool processes these log files in 100k-row
 chunks, each of which take 10-15s to process.  Using the built-in *multiprocessing*
 Python module, the code checks how many cores are available and chunks are processed in parallel
-across all cores. You can use the -c or --cores option to specify fewer.
+across all cores. You can use the *-c* (or *--cores*) option to specify fewer.
 
 Both Yamcam and the ysp use the Yamnet model to classify sounds, with scores reported, for each
 sample, for each of the 521 sound classes Yamnet is trained to detect.  These 
