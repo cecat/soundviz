@@ -18,7 +18,7 @@ detected by each camera (sound source).
 *group*.
 
 This code has only been tested on MacOS (running Sequoia 15.1) with Apple M2
-10-core processor.
+8-core processor.
 
 ## Reqirements
 
@@ -110,8 +110,8 @@ This tool is desiged specifically for sound log files produced by Yamcam or
 the command line tool Yamnet Sound Proviler (ysp), which can produce
 log files -- csv files with millions of rows.  The tool processes these log files in 100k-row
 chunks, each of which take 10-15s to process.  Using the built-in *multiprocessing*
-Python module, the code checks how many cores are available and chunks are processed in parallel
-across all cores. You can use the *-c* (or *--cores*) option to specify fewer.
+Python module, chunks are processed in parallel
+across either cores or fewer if set using the *-c* (or *--cores*) option.
 
 Both Yamcam and the ysp use the Yamnet model to classify sounds, with scores reported, for each
 sample, for each of the 521 sound classes Yamnet is trained to detect.  These 
