@@ -8,6 +8,7 @@
 #
 
 # Classes and Functions in this file:
+#
 # class SoundVisualizer
 #       Methods:
 #           __init__(self, df, total_classification_counts,
@@ -18,6 +19,11 @@
 #           create_timelines(self):
 #           create_camera_pies(self):
 #           create_group_pies(self):
+#
+# Graphing Functions
+#    autopct(pct)
+#    generate_pies( data_list, titles, labels_list, colors_list, output_prefix
+#    save_legend_as_png(title, colors, labels, output_filename)
 
 # sv_graphs.py
 
@@ -31,9 +37,9 @@ import logging
 from collections import defaultdict
 
 from sv_functions import (
-    plot_dir, autopct, make_pdf, label_threshold, 
-    generate_pies, prefix_timeline, prefix_camera_pie, prefix_group_pie,
-    save_legend_as_png, cam_pie_legend, group_pie_legend
+    plot_dir, label_threshold, percent_threshold,
+    prefix_timeline, prefix_camera_pie, prefix_group_pie,
+    cam_pie_legend, group_pie_legend
 )
 
 class SoundVisualizer:
@@ -327,4 +333,77 @@ class SoundVisualizer:
             )
         else:
             logging.warning("No valid data for groups. Skipping group-specific pies.")
+
+#
+#### Graphing functions
+#
+
+def autopct(pct):
+    """Convert to percentages."""
+    return f'{pct:.1f}%' if pct >= percent_threshold else ''
+
+def generate_pies( data_list, titles, labels_list, colors_list, output_prefix
+):
+    """Create individual pie charts."""
+    for idx, (data, title, labels, colors) in enumerate(
+        zip(data_list, titles, labels_list, colors_list)
+    ):
+        fig, ax = plt.subplots(figsize=(4, 4), dpi=100)
+        ax.pie(
+            data,
+            colors=colors,
+            autopct=autopct,
+            startangle=90,
+            counterclock=False,
+            textprops={'fontsize': 8}
+        )
+        ax.axis('equal')
+        ax.set_title(title, fontsize=10)
+        plt.tight_layout()
+
+        filename = f"{plot_dir}/{output_prefix}{title}.png"
+
+        plt.savefig(filename)
+        plt.close()
+
+def save_legend_as_png(title, colors, labels, output_filename):
+    """Create legend as a separate png file."""
+    if not colors or not labels:
+        logging.warning(f"Skipping legend generation for {title} due to lack of data.")
+        return
+
+    fontsize = 8
+
+    # Create a figure to hold only the legend
+    fig, ax = plt.subplots(figsize=(3, 2))
+    ax.axis("off")
+
+    # Create a dummy plot to generate the legend
+    handles = [
+        plt.Line2D(
+            [0], [0],
+            color=color,
+            marker='o',
+            linestyle='',
+            markersize=8
+        )
+        for color in colors
+    ]
+
+    legend = ax.legend(
+        handles,
+        labels,
+        loc="upper left",
+        frameon=False,
+        title= title,
+        prop={'size': fontsize}
+    )
+
+    # align titles to the left
+    legend.get_title().set_ha('left')
+
+    # Save the legend as a PNG
+    legend_path = os.path.join(plot_dir, output_filename)
+    plt.savefig(legend_path, bbox_inches="tight", dpi=300)
+    plt.close(fig)
 

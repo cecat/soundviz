@@ -34,19 +34,17 @@
 # sv_functions.py
 
 import os
-#import sys
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
-#import seaborn as sns
 import numpy as np
 import glob
 import logging
+from PIL import Image
 from reportlab.lib.pagesizes import letter, portrait
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.colors import blue
-#from PIL import Image
 from collections import defaultdict
 
 # Constants
@@ -267,79 +265,8 @@ def process_chunk(chunk):
 
 
 #
-#### Graphing functions
+#### Make the PDF
 #
-def autopct(pct):
-    """Convert to percentages."""
-    return f'{pct:.1f}%' if pct >= percent_threshold else ''
-
-
-def generate_pies( data_list, titles, labels_list, colors_list, output_prefix
-):
-    """Create individual pie charts."""
-    for idx, (data, title, labels, colors) in enumerate(
-        zip(data_list, titles, labels_list, colors_list)
-    ):
-        fig, ax = plt.subplots(figsize=(4, 4), dpi=100)
-        ax.pie(
-            data,
-            colors=colors,
-            autopct=autopct,
-            startangle=90,
-            counterclock=False,
-            textprops={'fontsize': 8}
-        )
-        ax.axis('equal')
-        ax.set_title(title, fontsize=10)
-        plt.tight_layout()
-
-        filename = f"{plot_dir}/{output_prefix}{title}.png"
-
-        plt.savefig(filename)
-        plt.close()
-
-
-def save_legend_as_png(title, colors, labels, output_filename):
-    """Create legend as a separate png file."""
-    if not colors or not labels:
-        logging.warning(f"Skipping legend generation for {title} due to lack of data.")
-        return
-
-    fontsize = 8
-
-    # Create a figure to hold only the legend
-    fig, ax = plt.subplots(figsize=(3, 2))
-    ax.axis("off")
-
-    # Create a dummy plot to generate the legend
-    handles = [
-        plt.Line2D(
-            [0], [0],
-            color=color,
-            marker='o',
-            linestyle='',
-            markersize=8
-        )
-        for color in colors
-    ]
-
-    legend = ax.legend(
-        handles,
-        labels,
-        loc="upper left",
-        frameon=False,
-        title= title,
-        prop={'size': fontsize}
-    )
-
-    # align titles to the left
-    legend.get_title().set_ha('left')
-
-    # Save the legend as a PNG
-    legend_path = os.path.join(plot_dir, output_filename)
-    plt.savefig(legend_path, bbox_inches="tight", dpi=300)
-    plt.close(fig)
-
 
 def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
     """Insert images to build PDF report file."""
@@ -362,8 +289,8 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
         for idx, image_path in enumerate(page_images):
             try:
                 img = Image.open(image_path)
-            except:
-                logging.error(f"Cannot find {image_path}.")
+            except OSError as e:
+                logging.error(f"Error: Cannot open '{image_path}': {e}")
                 raise SystemExit
 
             img_width, img_height = img.size
