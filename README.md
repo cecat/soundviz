@@ -54,20 +54,15 @@ mkdir ./logs
 5. Where to find the logs you want to analyze depends on which tool you used
 to generate them:
 
-5.1 If using this tool to analyze logs from Home Assistant Yamcam add-on.  
-Move copies of logs of interest into ./logs.
+    5.1 If using this tool to analyze logs from Home Assistant Yamcam add-on, you'll need to scp the logs from your Home Assistant server to the machine you are using to run the soundviz code. Log into your Home Assistant server vi ssh or use the Terminal window:
 
-From your Home Assistant server running Yamcam, copy a log file to ./logs.
-(log into Home Assistant using *SSH* or *Terminal*)
-
-**FROM HOME ASSISTANT CLI:**
 ```
 cd /media/yamcam
 ls -lt
 scp *.csv <your_username>@<yourhost>:/<path to>/soundviz/logs/
 ```
 
-5.2 If using this tool to analyze logs from the command line SVP tool, move or
+    5.2 If using this tool to analyze logs from the command line SVP tool, move or
 copy logs from the directory where you ran the SVP tool, within its *logs*
 subdirectory.  From your soundviz directory:
 ```
@@ -105,8 +100,13 @@ the report to be incomplete would not cause the tool to bail).
 ## More Information
 
 This tool is desiged specifically for sound log files produced by Yamcam or
-the command line tool Yamnet Sound Proviler (ysp), which 
-use the Yamnet model to classify sounds, with scores reported, for each
+the command line tool Yamnet Sound Proviler (ysp), which can produce
+log files in the hundreds of MB.  The tool processes these log files in 100k-row
+chunks, each of which take 10-15s to process.  We use the built-in *multiprocessing*
+Python module to process in parallel across however many cores you have in your 
+CPU.  On an Apple M2 with 10 cores, each chunk effectively takes 3-5s.  
+
+Both Yamcam and the ysp use the Yamnet model to classify sounds, with scores reported, for each
 sample, for each of the 521 sound classes Yamnet is trained to detect.  These 
 use a modified class map file which prepends each class with a *group* 
 name (people, animals, birds, vehicles, etc.).
