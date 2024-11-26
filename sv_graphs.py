@@ -1,10 +1,26 @@
-# 
-# Create graphs by section
+# SoundViz: A utility for visualizing data from the sound log files produced
+# by the Home Assistant Yamcam add-on
+# or the Yamnet Sound Profiler (YSP).
 #
+# Charlie Catlett - November 2024
 #
+# Class and methods to Create graphs by section
+#
+
+# Classes and Functions in this file:
+# class SoundVisualizer
+#       Methods:
+#           __init__(self, df, total_classification_counts,
+#                    hourly_event_counts, camera_event_counts,
+#                    group_class_counts, plot_dir):
+#           create_graphs(self):
+#           create_overall_classification_pie_chart(self):
+#           create_timelines(self):
+#           create_camera_pies(self):
+#           create_group_pies(self):
+
 # sv_graphs.py
 
-#import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -12,7 +28,6 @@ import seaborn as sns
 import numpy as np
 import os
 import logging
-#from datetime import datetime
 from collections import defaultdict
 
 from sv_functions import (
@@ -20,7 +35,6 @@ from sv_functions import (
     generate_pies, prefix_timeline, prefix_camera_pie, prefix_group_pie,
     save_legend_as_png, cam_pie_legend, group_pie_legend
 )
-
 
 class SoundVisualizer:
     def __init__(self, df, total_classification_counts, hourly_event_counts, camera_event_counts, group_class_counts, plot_dir):
@@ -43,7 +57,6 @@ class SoundVisualizer:
         self.create_timelines()
         self.create_camera_pies()
         self.create_group_pies()
-
 
     def create_overall_classification_pie_chart(self):
         classification_counts = pd.Series(self.total_classification_counts).sort_values(ascending=False)

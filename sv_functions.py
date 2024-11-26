@@ -6,8 +6,6 @@
 #
 # General Functions
 #
-# Charlie Catlett - November 2024
-#
 
 # Functions in this file:
 #
