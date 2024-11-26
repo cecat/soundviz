@@ -1,8 +1,9 @@
 
 # Camera-sounds add-on Log Visualizer
 
-This is a simple python code to visualize sound characteristics over time
-using sound log files from the
+This python code creates a report that visualizes sound characteristics detected
+over time by microphones (typically on cameras) captured in sound log files 
+created by the
 [Yamcam](https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
 Home Assistant add-on or the command line utility
 [Yamnet Sound Profiler (YSP)](https://github.com/cecat/ysp).
@@ -15,6 +16,9 @@ detected by each camera (sound source).
 3. Pie graphs showing distribution of event types for each camera (sound source).
 4. Pie graphs showing the distribution of individual yamnet *classes* for each
 *group*.
+
+This code has only been tested on MacOS (running Sequoia 15.1) with Apple M2
+10-core processor.
 
 ## Reqirements
 
@@ -101,10 +105,10 @@ the report to be incomplete would not cause the tool to bail).
 
 This tool is desiged specifically for sound log files produced by Yamcam or
 the command line tool Yamnet Sound Proviler (ysp), which can produce
-log files in the hundreds of MB.  The tool processes these log files in 100k-row
-chunks, each of which take 10-15s to process.  We use the built-in *multiprocessing*
-Python module to process in parallel across however many cores you have in your 
-CPU.  On an Apple M2 with 10 cores, each chunk effectively takes 3-5s.  
+log files -- csv files with millions of rows.  The tool processes these log files in 100k-row
+chunks, each of which take 10-15s to process.  Using the built-in *multiprocessing*
+Python module, the code checks how many cores are available and chunks are processed in parallel
+across all cores. You can use the -c or --cores option to specify fewer.
 
 Both Yamcam and the ysp use the Yamnet model to classify sounds, with scores reported, for each
 sample, for each of the 521 sound classes Yamnet is trained to detect.  These 
