@@ -1,40 +1,46 @@
-# Functions for a utility for visualizing data from the sound log files produced
-# by the Home Assistant (experimental) Yamcam add-on
-# (see https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
+# SoundViz: A utility for visualizing data from the sound log files produced
+# by the Home Assistant Yamcam add-on
+# or the Yamnet Sound Profiler (YSP).
 #
-# Charlie Catlett October 2024
+# Charlie Catlett - November 2024
+#
+# General Functions
+#
+# Charlie Catlett - November 2024
 #
 
 # Functions in this file:
-##      parse_args()
-#       Parse optional input and output file args (-i, -o)
 #
-##     check_for_plot_dir(directory)
-#      Make sure the output directory exists
+# Setup
+#    setup_logging(verbose=False, silent=False)
+#    parse_args()
+#    check_for_plot_dir(directory)
 #
-##     autopct(pct)
-#      Convert to percentages
+# Processing
+#    convert_group_score(value)
+#    convert_class_score(value)
+#    is_valid_datetime(value)
+#    int_defaultdict()
+#    two_level_defaultdict()
+#    three_level_defaultdict()
+#    nested_defaultdict(levels)
+#    process_chunk(chunk)
 #
-##     generate_pies( data_list, titles, labels_list,
-##                    colors_list, output_prefix,
-##                    pies_per_image=6):
-#      Create pie charts
-#
-##     add_images_to_pdf(c, image_paths, df, shift_x=0, shift_y=0)
-#      Add images to PDF
-#
-##     make_pdf(plot_dir, output_pdf_path, df)
-#      Create PDF
-#
+# Graphing
+#    autopct(pct)
+#    generate_pies( data_list, titles, labels_list, colors_list, output_prefix
+#    save_legend_as_png(title, colors, labels, output_filename)
+#    add_images_to_pdf(c, image_paths, df, rows=4, cols=2)
+#    make_pdf(output_pdf_path, df, total_classification_items)
 
 # sv_functions.py
 
 import os
-import sys
+#import sys
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+#import seaborn as sns
 import numpy as np
 import glob
 import logging
@@ -42,9 +48,8 @@ from reportlab.lib.pagesizes import letter, portrait
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 from reportlab.lib.colors import blue
-from PIL import Image
+#from PIL import Image
 from collections import defaultdict
-
 
 # Constants
 url = "https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3"
@@ -110,7 +115,7 @@ def parse_args():
     # Check if the input file exists
     if not os.path.exists(args.input):
         logging.error(f"Error: Input file '{args.input}' does not exist.")
-        sys.exit(1)
+        raise SystemExit
 
     return args
 
@@ -122,7 +127,7 @@ def check_for_plot_dir(directory):
         os.makedirs(directory, exist_ok=True)
     except OSError as e:
         logging.error(f"Error: Failed to create plot directory '{directory}': {e}")
-        sys.exit(1)
+        raise SystemExit
 
     # now empty it to avoid confusion with old png files
     try:
@@ -132,7 +137,7 @@ def check_for_plot_dir(directory):
                 os.remove(file_path)
     except OSError as e:
         logging.error(f"Error: Failed to empty plot directory '{directory}': {e}")
-        sys.exit(1)
+        raise SystemExit
 
 #
 #### Process Chunks
@@ -161,20 +166,40 @@ def is_valid_datetime(value):
     except (ValueError, TypeError):
         return False
 
-def nested_defaultdict(levels, base_type=int):
+def int_defaultdict():
+    """Return a defaultdict(int)."""
+    return defaultdict(int)
+
+
+def two_level_defaultdict():
+    """Return a two-level nested defaultdict with innermost defaultdict(int)."""
+    return defaultdict(int_defaultdict)
+
+
+def three_level_defaultdict():
+    """Return a three-level nested defaultdict with innermost defaultdict(int)."""
+    return defaultdict(two_level_defaultdict)
+
+
+def nested_defaultdict(levels):
     """
     Create a nested defaultdict with a specified number of levels.
 
     Args:
         levels (int): Number of nesting levels.
-        base_type (type): The type of the innermost default value.
 
     Returns:
         defaultdict: A nested defaultdict.
     """
     if levels == 1:
-        return defaultdict(base_type)
-    return defaultdict(lambda: nested_defaultdict(levels - 1, base_type))
+        return int_defaultdict()
+    elif levels == 2:
+        return two_level_defaultdict()
+    elif levels == 3:
+        return three_level_defaultdict()
+    else:
+        raise ValueError("Only up to 3 levels of nesting are supported.")
+
 
 
 def process_chunk(chunk):
@@ -187,12 +212,14 @@ def process_chunk(chunk):
     Returns:
         dict: A dictionary containing aggregated results for the chunk.
     """
+    # Show progress
+    print(".", end="", flush=True)
     # Initialize results with nested defaultdicts
     results = {
         "total_classification_counts": defaultdict(int),
         "camera_event_counts": defaultdict(int),
-        "hourly_event_counts": nested_defaultdict(3, int),  # Replaces lambda: defaultdict(lambda: defaultdict(int))
-        "group_class_counts": nested_defaultdict(2, int),   # Replaces lambda: defaultdict(int)
+        "hourly_event_counts": nested_defaultdict(3),
+        "group_class_counts": nested_defaultdict(2),
         "start_time": None,
         "end_time": None,
         "aggregated_rows": []
@@ -339,7 +366,7 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
                 img = Image.open(image_path)
             except:
                 logging.error(f"Cannot find {image_path}.")
-                sys.exit(1)
+                raise SystemExit
 
             img_width, img_height = img.size
 

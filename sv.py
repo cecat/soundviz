@@ -1,35 +1,30 @@
 # SoundViz: A utility for visualizing data from the sound log files produced
-# by the Home Assistant (experimental) Yamcam add-on
-# (see https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3)
+# by the Home Assistant Yamcam add-on
+# or the Yamnet Sound Profiler (YSP).
 #
-# Charlie Catlett October 2024
+# Charlie Catlett - November 2024
 #
 # sv.py
-import sys
+
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
-import seaborn as sns
-import numpy as np
 import os
 import logging
-from datetime import datetime
 from collections import defaultdict
+from multiprocessing import Pool
 
-from sv_functions import (
-    plot_dir, check_for_plot_dir, autopct,
-    make_pdf, label_threshold, percent_threshold, generate_pies,
-    parse_args, prefix_timeline, prefix_camera_pie, prefix_group_pie,
-    save_legend_as_png, cam_pie_legend, group_pie_legend, setup_logging,
-    is_valid_datetime, process_chunk, convert_group_score, 
+from sv_functions import ( plot_dir, check_for_plot_dir,
+    make_pdf, parse_args, setup_logging,
+    process_chunk, convert_group_score, 
     convert_class_score, nested_defaultdict
 )
 
 from sv_graphs import SoundVisualizer
 
-
 # chunking logs with millions of rows
 chunk_size = 100000
+
+# Determine number of cores to use
+num_workers = os.cpu_count() or 4  # Default to 4 if CPU count is unavailable
 
 # Function to determine if a row is a header
 def is_header(row):
@@ -76,34 +71,27 @@ def main():
     if has_header:
         total_lines -= 1
     total_chunks = (total_lines + chunk_size - 1) // chunk_size
-    if not silent and total_chunks > 5:
-        print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks. This will take a few minutes.")
-    logging.info(f"Total lines in file: {total_lines}. Estimated total chunks: {total_chunks}.")
+    if not silent and total_chunks > 10:
+        print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks.")
+    logging.info(f"Total lines in logfile: {total_lines}. Estimated total chunks: {total_chunks}.")
 
     # Initialize variables for aggregation
     aggregated_rows = []
     total_classification_counts = defaultdict(int)
     camera_event_counts = defaultdict(int)
-    hourly_event_counts = nested_defaultdict(3, int)  # Replaces lambda: defaultdict(lambda: defaultdict(int))
-    group_class_counts = nested_defaultdict(2, int)   # Replaces lambda: defaultdict(int)
+    hourly_event_counts = nested_defaultdict(3)
+    group_class_counts = nested_defaultdict(2)
     start_time = None
     end_time = None
 
-    # Process the file in chunks
-    chunk_number = 0
+    # Process chunks in parallel
     try:
-        for chunk in pd.read_csv(
+        chunk_generator = pd.read_csv(
             log_file_path,
             header=None,
             names=[
-                "datetime",
-                "camera",
-                "group",
-                "group_score",
-                "class",
-                "class_score",
-                "group_start",
-                "group_end"
+                "datetime", "camera", "group", "group_score",
+                "class", "class_score", "group_start", "group_end"
             ],
             skiprows=1 if has_header else 0,
             dtype={"group": "str"},
@@ -112,39 +100,36 @@ def main():
                 "class_score": convert_class_score
             },
             chunksize=chunk_size
-        ):
-            chunk_number += 1
-            logging.info(f"Processing chunk {chunk_number} of {total_chunks}...")
+        )
+        chunks = list(chunk_generator)
 
-            # Process the chunk and get results
-            results = process_chunk(chunk)
+        # Use multiprocessing Pool
+        num_workers = os.cpu_count() or 4
+        with Pool(processes=num_workers) as pool:
+            results_list = pool.map(process_chunk, chunks)
+            for _ in results_list:
+                print(".", end="", flush=True)
 
-            # Aggregate results
+        # Aggregate results
+        for results in results_list:
             aggregated_rows.extend(results["aggregated_rows"])
-
             for group, count in results["total_classification_counts"].items():
                 total_classification_counts[group] += count
-
             for camera, count in results["camera_event_counts"].items():
                 camera_event_counts[camera] += count
-
             for hour, cameras in results["hourly_event_counts"].items():
                 for camera, groups in cameras.items():
                     for group, count in groups.items():
                         hourly_event_counts[hour][camera][group] += count
-
             for group_name, classes in results["group_class_counts"].items():
                 for class_name, count in classes.items():
                     group_class_counts[group_name][class_name] += count
-
             if results["start_time"]:
                 if start_time is None or results["start_time"] < start_time:
                     start_time = results["start_time"]
-
             if results["end_time"]:
                 if end_time is None or results["end_time"] > end_time:
                     end_time = results["end_time"]
-
 
     except FileNotFoundError:
         logging.error(f"No log file found at {log_file_path}")
@@ -175,6 +160,6 @@ def main():
     if not silent:
         print(f"PDF report created at {output_pdf_path}")
 
-
 if __name__ == "__main__":
     main()
+
