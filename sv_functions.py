@@ -270,17 +270,54 @@ def process_chunk(chunk):
 #### Make the PDF
 #
 
+def draw_footer(c, start_date, end_date):
+    """
+    Draws the footer on the current page of the PDF.
+
+    Args:
+        c (Canvas): The canvas object from ReportLab.
+        start_date (str): The start date of the data analysis.
+        end_date (str): The end date of the data analysis.
+    """
+    # Footer text parts
+    text_prefix = f"Sound analysis ({start_date}-{end_date}) with data from "
+    yamcam_text = "Yamcam"
+    ysp_text = "ysp"
+
+    # Footer link URLs
+    yamcam_url = "https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3"
+    ysp_url = "https://github.com/cecat/ysp"
+
+    # Set font
+    c.setFont("Helvetica", 10)
+
+    # Draw prefix text
+    text_x = 0.75 * inch
+    c.drawString(text_x, 0.5 * inch, text_prefix)
+
+    # Draw Yamcam link
+    yamcam_x = text_x + c.stringWidth(text_prefix)
+    c.setFillColor("blue")
+    c.drawString(yamcam_x, 0.5 * inch, yamcam_text)
+    c.linkURL(yamcam_url, (yamcam_x, 0.5 * inch, yamcam_x + c.stringWidth(yamcam_text), 0.6 * inch), relative=0)
+
+    # Draw separator and ysp link
+    c.setFillColor("black")
+    separator_x = yamcam_x + c.stringWidth(yamcam_text)
+    c.drawString(separator_x, 0.5 * inch, " or ")
+    ysp_x = separator_x + c.stringWidth(" or ")
+    c.setFillColor("blue")
+    c.drawString(ysp_x, 0.5 * inch, ysp_text)
+    c.linkURL(ysp_url, (ysp_x, 0.5 * inch, ysp_x + c.stringWidth(ysp_text), 0.6 * inch), relative=0)
+
+    # Reset fill color to black
+    c.setFillColor("black")
+
+
 def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
     """Insert images to build PDF report file."""
-    # URL and footer text definitions
     log_start_date = df['datetime'].min().strftime('%Y-%m-%d %H:%M')
     log_end_date = df['datetime'].max().strftime('%Y-%m-%d %H:%M')
-    footer_text_prefix = (
-        f"Sound viz for {log_start_date} "
-        f" -  {log_end_date} using the Home Assistant add-on "
-    )
-    footer_text_yamcam = "Yamcam"
-    footer_text_suffix = "."
 
     # Calculate layout positioning and scaling
     images_per_page = rows * cols
@@ -311,32 +348,7 @@ def add_images_to_pdf(c, image_paths, df, rows=4, cols=2):
 
             c.drawImage(image_path, x, y, width=new_width, height=new_height)
 
-        # Add footer with visible clickable "Yamcam" link
-        c.setFont("Helvetica", 10)
-        c.drawString(0.75 * inch, 0.5 * inch, footer_text_prefix)
-        yamcam_text_x = c.stringWidth(footer_text_prefix) + 0.75 * inch
-        c.setFillColor(blue)
-        c.drawString(yamcam_text_x, 0.5 * inch, footer_text_yamcam)
-        c.setFillColor("black")
-        # Draw the suffix part of the footer
-        c.drawString(
-            yamcam_text_x + c.stringWidth(footer_text_yamcam),
-            0.5 * inch,
-            footer_text_suffix
-        )
-
-        # Add a clickable link for "Yamcam" with bounding box coordinates
-        c.linkURL(
-            url,
-            (
-                yamcam_text_x,
-                0.5 * inch,
-                yamcam_text_x + c.stringWidth(footer_text_yamcam),
-                0.6 * inch
-            ),
-            relative=1
-        )
-
+        draw_footer(c, log_start_date, log_end_date)
         c.showPage()
 
 
@@ -400,26 +412,27 @@ def make_pdf(output_pdf_path, df, total_classification_items):
 
     c.drawText(text)
 
+    draw_footer(c, date_start, date_end)
     # Report Prepared By Line
-    url = "https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3"
-    c.setFont("Helvetica", 12)
-    prepared_by_text = "Report prepared using sound logs from the Yamcam Home Assistant add-on."
+    #url = "https://github.com/cecat/CeC-HA-Addons/tree/main/yamcam3"
+    #c.setFont("Helvetica", 12)
+    #prepared_by_text = "Report prepared using sound logs from the Yamcam Home Assistant add-on."
 
     # Draw "Report prepared using sound logs from the" part in black
-    initial_text = "Report prepared using sound logs from the "
-    initial_text_x = (letter[0] / 2) - (c.stringWidth(prepared_by_text) / 2)
-    c.drawString(initial_text_x, 2 * inch, initial_text)
+    #initial_text = "Report prepared using sound logs from the "
+    #initial_text_x = (letter[0] / 2) - (c.stringWidth(prepared_by_text) / 2)
+    #c.drawString(initial_text_x, 2 * inch, initial_text)
 
     # Draw "Yamcam" as a colored, clickable link
-    yamcam_text_x = initial_text_x + c.stringWidth(initial_text)
-    c.setFillColor("blue")  # Make link text blue
-    c.drawString(yamcam_text_x, 2 * inch, "Yamcam")
-    c.linkURL(url, (yamcam_text_x, 2 * inch, yamcam_text_x + c.stringWidth("Yamcam"), 2.1 * inch), relative=1)
-    c.setFillColor("black")  # Reset color
+    #yamcam_text_x = initial_text_x + c.stringWidth(initial_text)
+    #c.setFillColor("blue")  # Make link text blue
+    #c.drawString(yamcam_text_x, 2 * inch, "Yamcam")
+    #c.linkURL(url, (yamcam_text_x, 2 * inch, yamcam_text_x + c.stringWidth("Yamcam"), 2.1 * inch), relative=1)
+    #c.setFillColor("black")  # Reset color
 
     # Draw the rest of the text
-    addon_text_x = yamcam_text_x + c.stringWidth("Yamcam")
-    c.drawString(addon_text_x, 2 * inch, " Home Assistant add-on.")
+    #addon_text_x = yamcam_text_x + c.stringWidth("Yamcam")
+    #c.drawString(addon_text_x, 2 * inch, " Home Assistant add-on.")
 
     # Finalize Cover Page
     c.showPage()
