@@ -54,7 +54,8 @@ mkdir ./logs
 5. Where to find the logs you want to analyze depends on which tool you used
 to generate them:
 
-    5.1 If using this tool to analyze logs from Home Assistant Yamcam add-on, you'll need to scp the logs from your Home Assistant server to the machine you are using to run the soundviz code. Log into your Home Assistant server vi ssh or use the Terminal window:
+**To analyze logs from Home Assistant Yamcam add-on:**
+Use scp to copy the logs from your Home Assistant server to the machine you are using to run the soundviz code. Log into your Home Assistant server vi ssh or use the Terminal window:
 
 ```
 cd /media/yamcam
@@ -62,8 +63,8 @@ ls -lt
 scp *.csv <your_username>@<yourhost>:/<path to>/soundviz/logs/
 ```
 
-    5.2 If using this tool to analyze logs from the command line SVP tool, move or
-copy logs from the directory where you ran the SVP tool, within its *logs*
+**To analyze logs from the command line SVP tool:**
+Move or copy logs from the directory where you ran the SVP tool, within its *logs*
 subdirectory.  From your soundviz directory:
 ```
 cp <path_to_svp>/logs/*.csv ./logs
