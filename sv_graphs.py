@@ -315,9 +315,20 @@ class SoundVisualizer:
                 group_colors_list.append(data_colors)
 
                 # Generate legend for each group
+                #legend_filename = f'{group_pie_legend}{group}.png'
+                #save_legend_as_png(
+                #    title=group,
+                #    colors=data_colors,
+                #    labels=top_classes.index.tolist(),
+                #    output_filename=legend_filename
+                #)
+                # Generate legend for each group
+                group_total = sum(self.total_classification_counts.values())
+                group_percentage = 100 * total_count / group_total if group_total > 0 else 0
+                # Generate legend for each group with updated title
                 legend_filename = f'{group_pie_legend}{group}.png'
                 save_legend_as_png(
-                    title=group,
+                    title=f"{group} ({group_percentage:.1f}%)",  # Add percentage to the title
                     colors=data_colors,
                     labels=top_classes.index.tolist(),
                     output_filename=legend_filename
