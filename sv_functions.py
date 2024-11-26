@@ -101,6 +101,9 @@ def parse_args():
     parser.add_argument('-s', '--silent', action='store_true',
         help='Suppress all but warning/error output'
     )
+    parser.add_argument('-c', '--cores', type=int, default=None,
+        help='Specify how many cores to use.'
+    )
 
     args = parser.parse_args()
 

@@ -23,9 +23,6 @@ from sv_graphs import SoundVisualizer
 # chunking logs with millions of rows
 chunk_size = 100000
 
-# Determine number of cores to use
-num_workers = os.cpu_count() or 4  # Default to 4 if CPU count is unavailable
-
 # Function to determine if a row is a header
 def is_header(row):
     return row[0].strip().lower() == "datetime"
@@ -64,6 +61,10 @@ def main():
     else:
         logging.info("No header detected. All rows will be processed.")
 
+    # Determine number of cores to use
+    num_workers = min(args.cores, os.cpu_count()) if args.cores else os.cpu_count()
+    logging.info(f"Using {num_workers} of {os.cpu_count()} cores.")
+
     # Estimate total number of chunks
     logging.info("Estimating total number of chunks...")
     with open(log_file_path, 'r') as f:
@@ -71,7 +72,7 @@ def main():
     if has_header:
         total_lines -= 1
     total_chunks = (total_lines + chunk_size - 1) // chunk_size
-    if not silent and total_chunks > 10:
+    if not silent and not verbose and total_chunks > 10:
         print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks.")
     logging.info(f"Total lines in logfile: {total_lines}. Estimated total chunks: {total_chunks}.")
 
