@@ -21,7 +21,8 @@ from sv_functions import (
     make_pdf, label_threshold, percent_threshold, generate_pies,
     parse_args, prefix_timeline, prefix_camera_pie, prefix_group_pie,
     save_legend_as_png, cam_pie_legend, group_pie_legend, setup_logging,
-    is_valid_datetime, process_chunk, convert_group_score, convert_class_score
+    is_valid_datetime, process_chunk, convert_group_score, 
+    convert_class_score, nested_defaultdict
 )
 
 from sv_graphs import SoundVisualizer
@@ -38,13 +39,12 @@ def is_header(row):
 # MAIN
 #
 def main():
-
-    ### Set up
     args = parse_args()
     verbose = args.verbose
     silent = args.silent
-    setup_logging(verbose=verbose, silent=silent)   # decide how noisy to be
+    setup_logging(verbose=verbose, silent=silent)
 
+    # Set up output PDF path
     if args.output:
         output_pdf_path = args.output
         if not output_pdf_path.lower().endswith('.pdf'):
@@ -52,18 +52,19 @@ def main():
     else:
         output_pdf_path = os.path.join(plot_dir, "Sound_viz.pdf")
 
+    # Set input log file path
     log_file_path = args.input
-    check_for_plot_dir(plot_dir)
+
     logging.info(f"Report will go to {output_pdf_path}.")
+    check_for_plot_dir(plot_dir)
 
     # Read the first row to check for header
     with open(log_file_path, 'r') as f:
         first_line = f.readline()
-        # Split the first line by comma to get individual columns
         first_row = first_line.strip().split(',')
-        has_header = is_header(first_row) # set the header flag for later
+        has_header = is_header(first_row)
 
-    if has_header: 
+    if has_header:
         logging.info("Header detected. The first row will be skipped during processing.")
     else:
         logging.info("No header detected. All rows will be processed.")
@@ -74,17 +75,17 @@ def main():
         total_lines = sum(1 for _ in f)
     if has_header:
         total_lines -= 1
-    total_chunks = (total_lines + chunk_size - 1) // chunk_size  # Ceiling division
+    total_chunks = (total_lines + chunk_size - 1) // chunk_size
     if not silent and total_chunks > 5:
-        print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks. Will take a few minutes.")
+        print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks. This will take a few minutes.")
     logging.info(f"Total lines in file: {total_lines}. Estimated total chunks: {total_chunks}.")
 
     # Initialize variables for aggregation
     aggregated_rows = []
     total_classification_counts = defaultdict(int)
     camera_event_counts = defaultdict(int)
-    hourly_event_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
-    group_class_counts = defaultdict(lambda: defaultdict(int))
+    hourly_event_counts = nested_defaultdict(3, int)  # Replaces lambda: defaultdict(lambda: defaultdict(int))
+    group_class_counts = nested_defaultdict(2, int)   # Replaces lambda: defaultdict(int)
     start_time = None
     end_time = None
 
@@ -104,10 +105,8 @@ def main():
                 "group_start",
                 "group_end"
             ],
-            skiprows=1 if has_header else 0,  # Conditionally skip the first row
-            dtype={
-                "group": "str",
-            },
+            skiprows=1 if has_header else 0,
+            dtype={"group": "str"},
             converters={
                 "group_score": convert_group_score,
                 "class_score": convert_class_score
@@ -117,8 +116,8 @@ def main():
             chunk_number += 1
             logging.info(f"Processing chunk {chunk_number} of {total_chunks}...")
 
-             # Process a chunk
-            results = process_chunk(chunk, has_header)
+            # Process the chunk and get results
+            results = process_chunk(chunk)
 
             # Aggregate results
             aggregated_rows.extend(results["aggregated_rows"])
@@ -138,13 +137,13 @@ def main():
                 for class_name, count in classes.items():
                     group_class_counts[group_name][class_name] += count
 
-            if results["end_time"]:
-                if end_time is None or results["end_time"] > end_time:
-                    end_time = results["end_time"]
-
             if results["start_time"]:
                 if start_time is None or results["start_time"] < start_time:
                     start_time = results["start_time"]
+
+            if results["end_time"]:
+                if end_time is None or results["end_time"] > end_time:
+                    end_time = results["end_time"]
 
 
     except FileNotFoundError:
@@ -157,10 +156,8 @@ def main():
         sys.exit(1)
     df = pd.concat(aggregated_rows, ignore_index=True)
 
-    ### Generate the PNG Graphs for the Report###
-
+    # Generate the PNG graphs for the report
     logging.info("Creating the graphs")
-
     visualizer = SoundVisualizer(
         df=df,
         total_classification_counts=total_classification_counts,
@@ -169,18 +166,15 @@ def main():
         group_class_counts=group_class_counts,
         plot_dir=plot_dir
     )
-
     visualizer.create_graphs()
 
-    ### Generate the PDF Report ###
-    
+    # Generate the PDF report
     classification_counts = pd.Series(total_classification_counts).sort_values(ascending=False)
     total_classification_items = classification_counts.sum()
-
     make_pdf(output_pdf_path, df, total_classification_items)
     if not silent:
         print(f"PDF report created at {output_pdf_path}")
 
+
 if __name__ == "__main__":
     main()
-

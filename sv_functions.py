@@ -161,13 +161,38 @@ def is_valid_datetime(value):
     except (ValueError, TypeError):
         return False
 
-def process_chunk(chunk, has_header):
-    """Process a single chunk and return the results."""
+def nested_defaultdict(levels, base_type=int):
+    """
+    Create a nested defaultdict with a specified number of levels.
+
+    Args:
+        levels (int): Number of nesting levels.
+        base_type (type): The type of the innermost default value.
+
+    Returns:
+        defaultdict: A nested defaultdict.
+    """
+    if levels == 1:
+        return defaultdict(base_type)
+    return defaultdict(lambda: nested_defaultdict(levels - 1, base_type))
+
+
+def process_chunk(chunk):
+    """
+    Process a single chunk of data and return the results in a self-contained manner.
+
+    Args:
+        chunk (DataFrame): A pandas DataFrame representing a chunk of the log file.
+
+    Returns:
+        dict: A dictionary containing aggregated results for the chunk.
+    """
+    # Initialize results with nested defaultdicts
     results = {
         "total_classification_counts": defaultdict(int),
         "camera_event_counts": defaultdict(int),
-        "hourly_event_counts": defaultdict(lambda: defaultdict(lambda: defaultdict(int))),
-        "group_class_counts": defaultdict(lambda: defaultdict(int)),
+        "hourly_event_counts": nested_defaultdict(3, int),  # Replaces lambda: defaultdict(lambda: defaultdict(int))
+        "group_class_counts": nested_defaultdict(2, int),   # Replaces lambda: defaultdict(int)
         "start_time": None,
         "end_time": None,
         "aggregated_rows": []
@@ -182,14 +207,14 @@ def process_chunk(chunk, has_header):
     valid_rows['datetime'] = pd.to_datetime(valid_rows['datetime'])
     valid_rows['hour'] = valid_rows['datetime'].dt.floor('h')
 
-    # Update start and end times
+    # Determine start and end times
     results["start_time"] = valid_rows['datetime'].min()
     results["end_time"] = valid_rows['datetime'].max()
 
-    # Append valid rows to aggregated data
+    # Append valid rows for potential aggregation
     results["aggregated_rows"].append(valid_rows)
 
-    # Extract group names from 'class' column
+    # Extract group and class names
     valid_rows[['group_name', 'class_name']] = valid_rows['class'].str.split('.', n=1, expand=True)
 
     # Update classification counts
@@ -208,60 +233,13 @@ def process_chunk(chunk, has_header):
     for (hour, camera, group_start), count in hourly_chunk_counts.items():
         results["hourly_event_counts"][hour][camera][group_start] += count
 
-    # Update group class counts
+    # Update group-class counts
     class_counts = valid_rows.groupby(['group_name', 'class_name']).size()
     for (group_name, class_name), count in class_counts.items():
         results["group_class_counts"][group_name][class_name] += count
 
     return results
 
-def old_process_chunk(chunk, has_header, start_time, end_time,
-                  total_classification_counts, camera_event_counts,
-                  hourly_event_counts, group_class_counts, aggregated_rows):
-    """Process a chunk."""
-    # Filter valid rows
-    valid_rows = chunk[chunk['datetime'].apply(is_valid_datetime)].copy()  # Added .copy()
-    if valid_rows.empty:
-        return start_time, end_time
-
-    # Convert datetime column
-    valid_rows['datetime'] = pd.to_datetime(valid_rows['datetime'])
-    valid_rows['hour'] = valid_rows['datetime'].dt.floor('h')
-
-    # Update start and end times
-    if start_time is None or valid_rows['datetime'].min() < start_time:
-        start_time = valid_rows['datetime'].min()
-    if end_time is None or valid_rows['datetime'].max() > end_time:
-        end_time = valid_rows['datetime'].max()
-
-    # Append valid rows to aggregated data
-    aggregated_rows.append(valid_rows)
-
-    # Extract group names from 'class' column
-    valid_rows[['group_name', 'class_name']] = valid_rows['class'].str.split('.', n=1, expand=True)
-
-    # Update total classification counts
-    group_counts = valid_rows['group_name'].value_counts()
-    for group, count in group_counts.items():
-        total_classification_counts[group] += count
-
-    # Update camera event counts
-    camera_counts = valid_rows['camera'].value_counts()
-    for camera, count in camera_counts.items():
-        camera_event_counts[camera] += count
-
-    # Update hourly event counts
-    events = valid_rows[valid_rows['group_start'].notna()]
-    hourly_chunk_counts = events.groupby(['hour', 'camera', 'group_start']).size()
-    for (hour, camera, group_start), count in hourly_chunk_counts.items():
-        hourly_event_counts[hour][camera][group_start] += count
-
-    # Update group class counts
-    class_counts = valid_rows.groupby(['group_name', 'class_name']).size()
-    for (group_name, class_name), count in class_counts.items():
-        group_class_counts[group_name][class_name] += count
-
-    return start_time, end_time
 
 #
 #### Graphing functions
