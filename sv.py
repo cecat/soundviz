@@ -106,12 +106,15 @@ def main():
 
         # Use multiprocessing Pool
         num_workers = os.cpu_count() or 4
+        # Use multiprocessing Pool
         with Pool(processes=num_workers) as pool:
-            results_list = pool.map(process_chunk, chunks)
-            if not silent:
-                for _ in results_list:
+            results_list = []
+            for result in pool.imap_unordered(process_chunk, chunks):
+                results_list.append(result)
+                if not silent:
                     print(".", end="", flush=True)
-                print() # kick to new line for subsequent log messages
+            if not silent:
+                print()  # Kick to a new line for subsequent log messages
 
         # Aggregate results
         for results in results_list:
