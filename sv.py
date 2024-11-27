@@ -21,7 +21,7 @@ from sv_functions import ( plot_dir, check_for_plot_dir,
 from sv_graphs import SoundVisualizer
 
 # chunking logs with millions of rows
-chunk_size = 100000
+chunk_size = 50000
 
 # Function to determine if a row is a header
 def is_header(row):
@@ -74,7 +74,10 @@ def main():
     total_chunks = (total_lines + chunk_size - 1) // chunk_size
     if not silent and not verbose and total_chunks > 10:
         print(f"INFO: Processing {total_chunks} {chunk_size}-row chunks.")
-    logging.info(f"Total lines in logfile: {total_lines}. Estimated total chunks: {total_chunks}.")
+    logging.info(
+            f"Total lines in logfile: {total_lines:,}. Processing "
+            f"{total_chunks} {chunk_size // 1000}k-row chunks.")
+
 
     # Initialize variables for aggregation
     aggregated_rows = []
