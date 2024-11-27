@@ -11,6 +11,7 @@ import os
 import logging
 from collections import defaultdict
 from multiprocessing import Pool
+from tqdm import tqdm # progress bar
 
 from sv_functions import ( plot_dir, check_for_plot_dir,
     make_pdf, parse_args, setup_logging,
@@ -110,14 +111,20 @@ def main():
         # Use multiprocessing Pool
         num_workers = os.cpu_count() or 4
         # Use multiprocessing Pool
+        #with Pool(processes=num_workers) as pool:
+            #results_list = []
+            #for result in pool.imap_unordered(process_chunk, chunks):
+                #results_list.append(result)
+                #if not silent:
+                    #print(".", end="", flush=True)
+            #if not silent:
+                #print()  # Kick to a new line for subsequent log messages
         with Pool(processes=num_workers) as pool:
             results_list = []
-            for result in pool.imap_unordered(process_chunk, chunks):
-                results_list.append(result)
-                if not silent:
-                    print(".", end="", flush=True)
-            if not silent:
-                print()  # Kick to a new line for subsequent log messages
+            with tqdm(total=len(chunks), desc="Processing chunks", unit="chunk") as pbar:
+                for result in pool.imap_unordered(process_chunk, chunks):
+                    results_list.append(result)
+                    pbar.update(1)
 
         # Aggregate results
         for results in results_list:
