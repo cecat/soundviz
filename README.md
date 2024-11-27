@@ -91,15 +91,16 @@ exceptions.  If there are fatal errors (e.g., cannot find specified input
 log file) these will be printed.  If the log file is large (>1M lines) a
 courtesy message will be printed to let you know how 
 many 50k-line chunks are going to be processed (i.e., that it might
-take a few minutes).
+take a few minutes). A progress bar will also be used to indicate progress.
 
 The *-v* or *--verbose* option sets logging level to INFO, which will log messages 
-to indicate progress.
+indicating what is being done as well as displaying the progress bar to show progress.
 
 The *-s* or *--silent* option will set logging level to WARNING, which will only
 log messages if something went awry, such as not finding the specified log file
 (i.e., a fatal error) or there is missing data (e.g., something that would cause
-the report to be incomplete would not cause the tool to bail).
+the report to be incomplete would not cause the tool to bail). If silent mode is
+not specified, a progress bar will be displayed.
 
 The *-c* or *--cores* option allows you to specify how many cores to use, up to the
 number of cores available in your processor.
