@@ -22,12 +22,14 @@ This code has only been tested on MacOS (running Sequoia 15.1) with Apple M2
 
 ## Reqirements
 
-This tool is written in Python and requires Python 3.7+ and the following libraries:
+This tool is written in Python and requires Python 3.7+ and the following libraries,
+which are included in requirements.txt::
 * pandas
 * matplotlib
 * seaborn
 * reportlab
 * pillow
+* tqdm
 * multiprocessing (built-in module)
 
 ## Setup Instructions (from Linux command line)
