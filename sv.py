@@ -111,10 +111,14 @@ def main():
         num_workers = os.cpu_count() or 4
         with Pool(processes=num_workers) as pool:
             results_list = []
-            with tqdm(total=len(chunks), desc="Processing chunks", unit="chunk") as pbar:
-                for result in pool.imap_unordered(process_chunk, chunks):
-                    results_list.append(result)
-                    pbar.update(1)
+            if not silent: # display progress bar
+                with tqdm(total=len(chunks), desc="Processing chunks", unit="chunk") as pbar:
+                    for result in pool.imap_unordered(process_chunk, chunks):
+                        results_list.append(result)
+                        pbar.update(1)
+            else: # do not display progress bar if --silent option is selected
+                    for result in pool.imap_unordered(process_chunk, chunks):
+                        results_list.append(result)
 
         # Aggregate results
         for results in results_list:
