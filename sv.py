@@ -79,7 +79,6 @@ def main():
             f"Total lines in logfile: {total_lines:,}. Processing "
             f"{total_chunks} {chunk_size // 1000}k-row chunks.")
 
-
     # Initialize variables for aggregation
     aggregated_rows = []
     total_classification_counts = defaultdict(int)
@@ -110,15 +109,6 @@ def main():
 
         # Use multiprocessing Pool
         num_workers = os.cpu_count() or 4
-        # Use multiprocessing Pool
-        #with Pool(processes=num_workers) as pool:
-            #results_list = []
-            #for result in pool.imap_unordered(process_chunk, chunks):
-                #results_list.append(result)
-                #if not silent:
-                    #print(".", end="", flush=True)
-            #if not silent:
-                #print()  # Kick to a new line for subsequent log messages
         with Pool(processes=num_workers) as pool:
             results_list = []
             with tqdm(total=len(chunks), desc="Processing chunks", unit="chunk") as pbar:
