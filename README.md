@@ -90,7 +90,7 @@ when the report is prepared, indicating the pathname for the report, with two
 exceptions.  If there are fatal errors (e.g., cannot find specified input
 log file) these will be printed.  If the log file is large (>1M lines) a
 courtesy message will be printed to let you know how 
-many 100k-line chunks are going to be processed (i.e., that it might
+many 50k-line chunks are going to be processed (i.e., that it might
 take a few minutes).
 
 The *-v* or *--verbose* option sets logging level to INFO, which will log messages 
@@ -108,7 +108,7 @@ number of cores available in your processor.
 
 This tool is desiged specifically for sound log files produced by Yamcam or
 the command line tool Yamnet Sound Proviler (ysp), which can produce
-log files -- csv files with millions of rows.  The tool processes these log files in 100k-row
+log files -- csv files with millions of rows.  The tool processes these log files in 50k-row
 chunks, each of which take 10-15s to process.  Using the built-in *multiprocessing*
 Python module, chunks are processed in parallel
 across either cores or fewer if set using the *-c* (or *--cores*) option.
