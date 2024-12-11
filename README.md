@@ -117,7 +117,8 @@ Python module, chunks are processed in parallel
 across either cores or fewer if set using the *-c* (or *--cores*) option.
 
 ysp and yamcam3 close their logs upon exit and create new logs when starting up, so
-a restart will mean a new log file. In case helpful, I've included *combiner.sh*,
+a restart will mean a new log file. In case helpful, I've included
+[combiner.sh](https://github.com/cecat/soundviz/blob/main/combiner.sh), 
 a shell script that you can use to combine all of the files in your *./logs* directory.
 
 Both Yamcam and the ysp use the Yamnet model to classify sounds, with scores reported, for each
