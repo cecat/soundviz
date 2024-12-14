@@ -54,7 +54,7 @@ class SoundVisualizer:
         # Initialize any other attributes if necessary
         self.custom_groups = ['environment', 'birds', 'animals', 'insects', 'weather',
                               'people', 'music', 'vehicles', 'alert']
-        self.custom_colors = ['green', 'lightgreen', '#B6885C', '#FF55BC', 'lightblue',
+        self.custom_colors = ['green', 'lightgreen', '#B6885C', '#FFC300', 'lightblue',
                               '#3D02C5', '#05ABD7', 'gray', 'red']
         self.group_colors = dict(zip(self.custom_groups, self.custom_colors))
 
