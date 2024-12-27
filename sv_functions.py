@@ -149,7 +149,6 @@ def convert_group_score(value):
     except (ValueError, TypeError):
         return np.nan
 
-
 def convert_class_score(value):
     """Convert class_score to a float or NaN if the value is empty."""
     try:
@@ -169,16 +168,13 @@ def int_defaultdict():
     """Return a defaultdict(int)."""
     return defaultdict(int)
 
-
 def two_level_defaultdict():
     """Return a two-level nested defaultdict with innermost defaultdict(int)."""
     return defaultdict(int_defaultdict)
 
-
 def three_level_defaultdict():
     """Return a three-level nested defaultdict with innermost defaultdict(int)."""
     return defaultdict(two_level_defaultdict)
-
 
 def nested_defaultdict(levels):
     """
@@ -199,11 +195,10 @@ def nested_defaultdict(levels):
     else:
         raise ValueError("Only up to 3 levels of nesting are supported.")
 
-
-
 def process_chunk(chunk):
     """
-    Process a single chunk of data and return the results in a self-contained manner.
+    Process a single chunk of data and return the results in a self-contained manner. 
+    Ignore any lines that begin with # so that we can include metadata.
 
     Args:
         chunk (DataFrame): A pandas DataFrame representing a chunk of the log file.
